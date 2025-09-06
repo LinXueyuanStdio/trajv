@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plotly JSON 渲染器</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#165DFF',
+            secondary: '#36CFC9',
+            neutral: {
+              100: '#F2F3F5',
+              200: '#E5E6EB',
+              300: '#C9CDD4',
+              400: '#86909C',
+              500: '#4E5969',
+              600: '#272E3B',
+              700: '#1D2129',
+            }
+          },
+          fontFamily: {
+            inter: ['Inter', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .scrollbar-hide {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+      }
+      .editor-shadow {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      }
+      .card-hover {
+        transition: all 0.3s ease;
+      }
+      .card-hover:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      }
+    }
+  </style>
+</head>
+<body class="font-inter bg-neutral-100 min-h-screen flex flex-col">
+  <!-- 导航栏 -->
+  <header class="bg-white border-b border-neutral-200 shadow-sm sticky top-0 z-10">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <i class="fa fa-line-chart text-primary text-2xl"></i>
+        <h1 class="text-xl font-semibold text-neutral-700">Plotly JSON 渲染器</h1>
+      </div>
+      <div class="flex items-center space-x-4">
+        <button id="theme-toggle" class="p-2 rounded-full hover:bg-neutral-100 transition-colors">
+          <i class="fa fa-moon-o text-neutral-500"></i>
+        </button>
+        <a href="https://plotly.com/javascript/reference/" target="_blank" rel="noopener noreferrer" 
+           class="text-primary hover:text-primary/80 flex items-center">
+          <i class="fa fa-book mr-1"></i>
+          <span class="hidden md:inline">文档</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主要内容 -->
+  <main class="flex-grow container mx-auto px-4 py-6">
+    <!-- 介绍卡片 -->
+    <div class="bg-white rounded-xl p-6 mb-6 card-hover editor-shadow">
+      <h2 class="text-lg font-semibold text-neutral-700 mb-2">输入 Plotly JSON</h2>
+      <p class="text-neutral-500 text-sm mb-4">
+        请输入有效的 Plotly JSON 数据，系统将自动渲染图表。你可以从
+        <a href="https://plotly.com/javascript/" target="_blank" rel="noopener noreferrer" 
+           class="text-primary hover:underline">Plotly 官方示例</a>
+        获取 JSON 格式的数据。
+      </p>
+      
+      <!-- 示例按钮 -->
+      <div class="flex flex-wrap gap-2 mb-4">
+        <button id="example-line" class="px-3 py-1 bg-primary/10 text-primary rounded-md text-sm hover:bg-primary/20 transition-colors">
+          <i class="fa fa-line-chart mr-1"></i>折线图
+        </button>
+        <button id="example-bar" class="px-3 py-1 bg-primary/10 text-primary rounded-md text-sm hover:bg-primary/20 transition-colors">
+          <i class="fa fa-bar-chart mr-1"></i>柱状图
+        </button>
+        <button id="example-pie" class="px-3 py-1 bg-primary/10 text-primary rounded-md text-sm hover:bg-primary/20 transition-colors">
+          <i class="fa fa-pie-chart mr-1"></i>饼图
+        </button>
+        <button id="example-scatter" class="px-3 py-1 bg-primary/10 text-primary rounded-md text-sm hover:bg-primary/20 transition-colors">
+          <i class="fa fa-dot-circle-o mr-1"></i>散点图
+        </button>
+        <button id="clear-btn" class="px-3 py-1 bg-neutral-100 text-neutral-500 rounded-md text-sm hover:bg-neutral-200 transition-colors">
+          <i class="fa fa-trash-o mr-1"></i>清空
+        </button>
+      </div>
+      
+      <!-- JSON 编辑器 -->
+      <div class="relative">
+        <textarea id="json-input" class="w-full h-64 p-4 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all editor-shadow scrollbar-hide font-mono text-sm" 
+                  placeholder='{"data": [{"type": "scatter", "x": [1, 2, 3], "y": [4, 5, 6]}]}'></textarea>
+        <div id="validation-message" class="hidden absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium"></div>
+      </div>
+      
+      <!-- 渲染按钮 -->
+      <div class="mt-4 flex justify-end">
+        <button id="render-btn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 focus:ring-2 focus:ring-primary/30 transition-all flex items-center">
+          <i class="fa fa-refresh mr-2"></i>
+          渲染图表
+        </button>
+      </div>
+    </div>
+    
+    <!-- 图表显示区域 -->
+    <div class="bg-white rounded-xl p-6 card-hover editor-shadow">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-semibold text-neutral-700">渲染结果</h2>
+        <div class="flex space-x-2">
+          <button id="download-png" class="px-3 py-1 bg-neutral-100 text-neutral-600 rounded-md text-sm hover:bg-neutral-200 transition-colors">
+            <i class="fa fa-download mr-1"></i>PNG
+          </button>
+          <button id="download-svg" class="px-3 py-1 bg-neutral-100 text-neutral-600 rounded-md text-sm hover:bg-neutral-200 transition-colors">
+            <i class="fa fa-download mr-1"></i>SVG
+          </button>
+        </div>
+      </div>
+      
+      <!-- 图表容器 -->
+      <div id="chart-container" class="w-full h-[400px] border border-neutral-200 rounded-lg overflow-hidden bg-neutral-50">
+        <div class="flex flex-col items-center justify-center h-full text-neutral-400">
+          <i class="fa fa-area-chart text-5xl mb-3 opacity-30"></i>
+          <p>请输入 JSON 数据并点击"渲染图表"按钮</p>
+        </div>
+      </div>
+      
+      <!-- 错误信息 -->
+      <div id="error-message" class="mt-4 p-3 bg-red-50 border border-red-100 rounded-lg text-red-600 text-sm hidden">
+        <i class="fa fa-exclamation-circle mr-2"></i>
+        <span>JSON 格式错误，请检查你的输入</span>
+      </div>
+    </div>
+  </main>
+
+  <!-- 页脚 -->
+  <footer class="bg-white border-t border-neutral-200 py-4 mt-8">
+    <div class="container mx-auto px-4 text-center text-neutral-500 text-sm">
+      <p>© 2025 Plotly JSON 渲染器 | 使用 <a href="https://plotly.com/javascript/" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">Plotly.js</a> 构建</p>
+    </div>
+  </footer>
+
+  <script>
+    // DOM 元素
+    const jsonInput = document.getElementById('json-input');
+    const renderBtn = document.getElementById('render-btn');
+    const chartContainer = document.getElementById('chart-container');
+    const errorMessage = document.getElementById('error-message');
+    const validationMessage = document.getElementById('validation-message');
+    const themeToggle = document.getElementById('theme-toggle');
+    const downloadPNG = document.getElementById('download-png');
+    const downloadSVG = document.getElementById('download-svg');
+    const clearBtn = document.getElementById('clear-btn');
+    
+    // 示例按钮
+    const exampleLine = document.getElementById('example-line');
+    const exampleBar = document.getElementById('example-bar');
+    const examplePie = document.getElementById('example-pie');
+    const exampleScatter = document.getElementById('example-scatter');
+    
+    // 示例数据
+    const exampleData = {
+      line: {
+        data: [{
+          type: 'scatter',
+          mode: 'lines+markers',
+          x: [1, 2, 3, 4, 5],
+          y: [10, 15, 13, 17, 20],
+          marker: { color: '#165DFF' },
+          line: { color: '#165DFF' }
+        }],
+        layout: {
+          title: '折线图示例',
+          xaxis: { title: 'X轴' },
+          yaxis: { title: 'Y轴' },
+          width: '100%',
+          height: 400,
+          margin: { t: 40, b: 40, l: 50, r: 20 }
+        }
+      },
+      bar: {
+        data: [{
+          type: 'bar',
+          x: ['苹果', '香蕉', '橙子', '葡萄', '草莓'],
+          y: [12, 19, 3, 5, 2],
+          marker: { color: '#36CFC9' }
+        }],
+        layout: {
+          title: '柱状图示例',
+          xaxis: { title: '水果' },
+          yaxis: { title: '数量' },
+          width: '100%',
+          height: 400,
+          margin: { t: 40, b: 40, l: 50, r: 20 }
+        }
+      },
+      pie: {
+        data: [{
+          type: 'pie',
+          labels: ['衬衫', '羊毛衫', '雪纺衫', '裤子', '高跟鞋', '袜子'],
+          values: [35, 25, 25, 10, 3, 2],
+          marker: {
+            colors: [
+              '#165DFF', '#36CFC9', '#FF7D00', 
+              '#F7BA1E', '#722ED1', '#EB0A1E'
+            ]
+          }
+        }],
+        layout: {
+          title: '饼图示例',
+          width: '100%',
+          height: 400,
+          margin: { t: 40, b: 20, l: 20, r: 20 }
+        }
+      },
+      scatter: {
+        data: [{
+          type: 'scatter',
+          mode: 'markers',
+          x: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+          y: [10, 20, 30, 25, 15, 35, 40, 30, 20, 10],
+          marker: {
+            size: [10, 15, 20, 25, 30, 35, 40, 35, 30, 25],
+            color: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+            colorscale: 'Viridis',
+            showscale: true
+          }
+        }],
+        layout: {
+          title: '散点图示例',
+          xaxis: { title: 'X值' },
+          yaxis: { title: 'Y值' },
+          width: '100%',
+          height: 400,
+          margin: { t: 40, b: 40, l: 50, r: 20 }
+        }
+      }
+    };
+    
+    // 验证 JSON 输入
+    function validateJSON(jsonString) {
+      try {
+        if (!jsonString.trim()) return null;
+        const parsed = JSON.parse(jsonString);
+        validationMessage.textContent = '格式正确';
+        validationMessage.className = 'absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium bg-green-50 text-green-600';
+        validationMessage.classList.remove('hidden');
+        errorMessage.classList.add('hidden');
+        return parsed;
+      } catch (e) {
+        validationMessage.textContent = '格式错误';
+        validationMessage.className = 'absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium bg-red-50 text-red-600';
+        validationMessage.classList.remove('hidden');
+        errorMessage.classList.remove('hidden');
+        errorMessage.querySelector('span').textContent = `JSON 格式错误: ${e.message}`;
+        return null;
+      }
+    }
+    
+    // 渲染图表
+    function renderChart(jsonData) {
+      // 清除现有图表
+      while (chartContainer.firstChild) {
+        chartContainer.removeChild(chartContainer.firstChild);
+      }
+      
+      // 创建新的图表容器
+      const plotContainer = document.createElement('div');
+      plotContainer.id = 'plotly-chart';
+      plotContainer.className = 'w-full h-full';
+      chartContainer.appendChild(plotContainer);
+      
+      try {
+        // 检查数据格式
+        if (Array.isArray(jsonData)) {
+          // 如果是数据数组，直接使用
+          Plotly.newPlot('plotly-chart', jsonData);
+        } else if (typeof jsonData === 'object' && jsonData !== null) {
+          // 如果是包含 data 和 layout 的对象
+          const { data, layout = {}, config = {} } = jsonData;
+          if (Array.isArray(data)) {
+            // 设置默认布局
+            const defaultLayout = {
+              width: '100%',
+              height: 400,
+              margin: { t: 40, b: 40, l: 50, r: 20 },
+              font: { family: 'Inter, sans-serif' }
+            };
+            const mergedLayout = { ...defaultLayout, ...layout };
+            
+            // 设置默认配置
+            const defaultConfig = {
+              responsive: true,
+              displayModeBar: true,
+              toImageButtonOptions: {
+                format: 'png',
+                filename: 'plotly_chart',
+                height: 400,
+                width: 800,
+                scale: 2
+              }
+            };
+            const mergedConfig = { ...defaultConfig, ...config };
+            
+            Plotly.newPlot('plotly-chart', data, mergedLayout, mergedConfig);
+          } else {
+            throw new Error('JSON 数据中缺少有效的 data 数组');
+          }
+        } else {
+          throw new Error('JSON 格式不支持，应为数组或对象');
+        }
+        
+        // 启用下载按钮
+        downloadPNG.disabled = false;
+        downloadSVG.disabled = false;
+      } catch (e) {
+        errorMessage.classList.remove('hidden');
+        errorMessage.querySelector('span').textContent = `渲染错误: ${e.message}`;
+        downloadPNG.disabled = true;
+        downloadSVG.disabled = true;
+      }
+    }
+    
+    // 下载图表
+    function downloadChart(format) {
+      if (document.getElementById('plotly-chart')) {
+        Plotly.downloadImage('plotly-chart', {
+          format: format,
+          height: 800,
+          width: 1200,
+          scale: 2
+        });
+      }
+    }
+    
+    // 设置示例数据
+    function setExampleData(exampleKey) {
+      const example = exampleData[exampleKey];
+      jsonInput.value = JSON.stringify(example, null, 2);
+      validateJSON(jsonInput.value);
+    }
+    
+    // 事件监听器
+    renderBtn.addEventListener('click', () => {
+      const jsonData = validateJSON(jsonInput.value);
+      if (jsonData) {
+        renderChart(jsonData);
+      }
+    });
+    
+    jsonInput.addEventListener('input', () => {
+      validateJSON(jsonInput.value);
+    });
+    
+    // 主题切换
+    themeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('dark');
+      const icon = themeToggle.querySelector('i');
+      if (icon.classList.contains('fa-moon-o')) {
+        icon.classList.replace('fa-moon-o', 'fa-sun-o');
+      } else {
+        icon.classList.replace('fa-sun-o', 'fa-moon-o');
+      }
+    });
+    
+    // 下载按钮
+    downloadPNG.addEventListener('click', () => downloadChart('png'));
+    downloadSVG.addEventListener('click', () => downloadChart('svg'));
+    
+    // 清空按钮
+    clearBtn.addEventListener('click', () => {
+      jsonInput.value = '';
+      validationMessage.classList.add('hidden');
+      errorMessage.classList.add('hidden');
+      
+      // 清除图表
+      while (chartContainer.firstChild) {
+        chartContainer.removeChild(chartContainer.firstChild);
+      }
+      const placeholder = document.createElement('div');
+      placeholder.className = 'flex flex-col items-center justify-center h-full text-neutral-400';
+      placeholder.innerHTML = `
+        <i class="fa fa-area-chart text-5xl mb-3 opacity-30"></i>
+        <p>请输入 JSON 数据并点击"渲染图表"按钮</p>
+      `;
+      chartContainer.appendChild(placeholder);
+      
+      // 禁用下载按钮
+      downloadPNG.disabled = true;
+      downloadSVG.disabled = true;
+    });
+    
+    // 示例按钮事件
+    exampleLine.addEventListener('click', () => setExampleData('line'));
+    exampleBar.addEventListener('click', () => setExampleData('bar'));
+    examplePie.addEventListener('click', () => setExampleData('pie'));
+    exampleScatter.addEventListener('click', () => setExampleData('scatter'));
+    
+    // 初始禁用下载按钮
+    downloadPNG.disabled = true;
+    downloadSVG.disabled = true;
+    
+    // 添加键盘快捷键 (Ctrl+Enter 渲染图表)
+    jsonInput.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        renderBtn.click();
+      }
+    });
+    
+    // 初始验证
+    validateJSON(jsonInput.value);
+  </script>
+</body>
+</html>
+  
