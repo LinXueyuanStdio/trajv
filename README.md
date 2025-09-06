@@ -1,10 +1,14 @@
 # Trajectory Browser
 
+![GitHub Repo stars](https://img.shields.io/github/stars/LinXueyuanStdio/trajv?style=social) ![GitHub issues](https://img.shields.io/github/issues/LinXueyuanStdio/trajv) ![GitHub license](https://img.shields.io/github/license/LinXueyuanStdio/trajv) ![GitHub last commit](https://img.shields.io/github/last-commit/LinXueyuanStdio/trajv) ![GitHub contributors](https://img.shields.io/github/contributors/LinXueyuanStdio/trajv) ![GitHub repo size](https://img.shields.io/github/repo-size/LinXueyuanStdio/trajv)
+
 > 🚀 Trajectory Browser: Visualizing and navigating agent rollout trajectory files seamlessly.
 
 > 🚀 轨迹浏览器：浏览 agent rollout 轨迹文件
 
 ⭐ 如果这个项目对您有帮助，请给它一个星星！
+
+![](./screenshot.png)
 
 ## 📖 项目简介
 
