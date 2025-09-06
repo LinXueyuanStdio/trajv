@@ -1,440 +1,251 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Plotly JSON 渲染器</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-  <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: '#165DFF',
-            secondary: '#36CFC9',
-            neutral: {
-              100: '#F2F3F5',
-              200: '#E5E6EB',
-              300: '#C9CDD4',
-              400: '#86909C',
-              500: '#4E5969',
-              600: '#272E3B',
-              700: '#1D2129',
-            }
-          },
-          fontFamily: {
-            inter: ['Inter', 'sans-serif'],
-          },
-        },
-      }
-    }
-  </script>
-  
-  <style type="text/tailwindcss">
-    @layer utilities {
-      .content-auto {
-        content-visibility: auto;
-      }
-      .scrollbar-hide {
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-      }
-      .scrollbar-hide::-webkit-scrollbar {
-        display: none;
-      }
-      .editor-shadow {
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-      }
-      .card-hover {
-        transition: all 0.3s ease;
-      }
-      .card-hover:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-      }
-    }
+  <meta charset="UTF-8" />
+  <title>Trajectory 浏览器</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root { color-scheme: light dark; --bg:#1e1f22; --panel:#2a2d31; --panel-alt:#35393f; --border:#444c56; --accent:#3d82f6; --accent-hover:#1d5fd1; --danger:#d9534f; --text:#e6e6e6; --muted:#9aa0a6; font-family: system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif; }
+    body { margin:0; background:var(--bg); color:var(--text); display:flex; flex-direction:column; min-height:100vh; }
+    header { padding:.75rem 1rem; background:var(--panel); display:flex; flex-wrap:wrap; gap:.75rem; align-items:center; border-bottom:1px solid var(--border); }
+    h1 { font-size:1.1rem; margin:0 .75rem 0 0; font-weight:600; }
+  /* Unified file area */
+  .file-area{border:2px dashed var(--border);border-radius:8px;padding:.55rem .75rem;display:flex;flex-direction:column;gap:.5rem;min-width:320px;max-width:560px;background:linear-gradient(180deg,#24272b,#1d2125);position:relative;}
+  /* Compact mode: applied after文件加载，避免 header 被高区域撑开 */
+  .file-area.compact{flex-direction:row;align-items:center;gap:.6rem;padding:.35rem .55rem;min-width:auto;max-width:none;border-style:solid;}
+  .file-area.compact .file-hint{display:none !important;}
+  .file-area.dragover{border-color:var(--accent);background:#1b283b;}
+  .file-actions{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;}
+  .file-hint{font-size:.65rem;color:var(--muted);letter-spacing:.3px;}
+  input[type=file]{max-width:260px;}
+  /* --- Base controls --- */
+  input[type=number],button{ background:var(--panel-alt); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:.4rem .65rem; font-size:.8rem; line-height:1.2; }
+  button{cursor:pointer; transition:.18s background-color,.18s border-color,.18s color;}
+  button:hover{background:var(--accent-hover); color:#fff; border-color:var(--accent-hover);}
+  button.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  button.primary:hover{background:var(--accent-hover);}
+  button:disabled{opacity:.4; cursor:not-allowed;}
+  /* --- Enhanced select dropdown styling --- */
+  select{background:linear-gradient(180deg,#3a3f45,#2d3136); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:.42rem 1.7rem .42rem .65rem; font-size:.8rem; line-height:1.2; cursor:pointer; appearance:none; -webkit-appearance:none; position:relative; box-shadow:0 0 0 1px #0006 inset,0 1px 0 #0004; transition:.18s border-color,.18s background-color,.18s box-shadow; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23cdd3d8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='3 4 6 7 9 4'/></svg>"); background-repeat:no-repeat; background-position:right 8px center; background-size:12px 12px;}
+  select:hover{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset,0 1px 0 #0004;}
+  select:focus{outline:2px solid var(--accent); outline-offset:2px;}
+  select:disabled{opacity:.45; cursor:not-allowed;}
+  /* Compact mode selects */
+  .mode-select{padding:.28rem 1.4rem .28rem .45rem; font-size:.7rem; background-size:11px 11px;}
+    .grow{flex:1 1 auto;} .status{font-size:.8rem; color:var(--muted);} .collapse-bar{background:var(--panel-alt); padding:.4rem .9rem; display:flex; gap:1rem; align-items:center; cursor:pointer; user-select:none; border-bottom:1px solid var(--border);} .collapse-bar h2{font-size:.8rem; margin:0; letter-spacing:.5px; font-weight:600;} .chevron{transition:transform .25s ease;} .collapsed .chevron{transform:rotate(-90deg);} #details{display:none; padding:.75rem .9rem; background:var(--panel-alt); border-bottom:1px solid var(--border);} pre{margin:0; font-family:ui-monospace,SFMono-Regular,Monaco,Menlo,Consolas,"Liberation Mono",monospace; font-size:.75rem; line-height:1.3; background:#111a; padding:.5rem .6rem; border:1px solid #444a; border-radius:4px; overflow:auto; max-height:320px;}
+    code.json-key{color:#8ab4f8;} code.json-string{color:#98c379;} code.json-number{color:#d19a66;} code.json-boolean{color:#56b6c2;} code.json-null{color:#c678dd;}
+    main{flex:1 1 auto; display:flex;} .columns{display:flex; gap:1rem; padding:1rem; width:100%;} .col{flex:1 1 50%; display:flex; flex-direction:column; gap:.75rem;} .panel-header{display:flex; gap:.5rem; align-items:center; margin:0 0 .5rem;} .panel-title{font-size:.75rem; font-weight:600; letter-spacing:.5px; margin:0; color:var(--muted); text-transform:uppercase;} .mode-select{font-size:.7rem; padding:.25rem .4rem;}
+  .message{border:1px solid var(--border); background:var(--panel); padding:.4rem .55rem .55rem; border-radius:6px; display:flex; flex-direction:column; gap:.25rem;}
+  .message.answer{box-shadow:0 0 0 1px var(--accent) inset;}
+  .msg-header{display:flex; align-items:center; gap:.5rem; font-size:.65rem; letter-spacing:.5px; text-transform:uppercase; color:var(--muted); cursor:pointer; user-select:none;}
+  .msg-header .arrow{transition:transform .2s ease; font-size:.65rem; color:var(--accent);}
+  .message.collapsed .msg-header .arrow{transform:rotate(-90deg);}
+  .msg-role{font-weight:600; color:var(--text);}
+  .edited-badge{background:var(--accent); color:#fff; font-size:.55rem; padding:.15rem .4rem; border-radius:999px; letter-spacing:.5px;}
+  .msg-body{display:flex; flex-direction:column; gap:.4rem;}
+  .message.collapsed .msg-body{display:none;}
+  .msg-content{font-size:.9rem; line-height:1.32; font-family: ui-monospace, SFMono-Regular, Monaco, Menlo, Consolas, "Liberation Mono", monospace;}
+  .msg-lines{border:1px solid var(--border); border-radius:4px; overflow:hidden; background:#17191c;}
+  .msg-line{padding:0 .5rem; font-size:.82rem; line-height:1.2; white-space:pre-wrap; word-break:break-word; position:relative;}
+  .msg-line:not(:last-child){border-bottom:0.5px solid #30363d;} /* 极窄分隔线 */
+  .msg-line code{background:#2d3136; padding:0 .25rem; border-radius:3px;}
+  .msg-line strong{color:#ffd166;}
+  .msg-line em{color:#6fb1ff;}
+  .xml-tag{color:#ff8b60; font-weight:500;}
+  pre code{font-size:.7rem; line-height:1.25;}
+  .code-block{position:relative;}
+  .code-lang{position:absolute; top:4px; right:8px; font-size:.55rem; background:#0006; padding:2px 6px; border-radius:4px; letter-spacing:.5px;}
+  .mm-images{display:flex; flex-wrap:wrap; gap:.5rem;}
+  .mm-images img{max-width:160px; border:1px solid var(--border); border-radius:4px; background:#000; object-fit:cover;}
+  .json-view{white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere;}
+  .json-block{border:1px solid var(--border); background:#101317; border-radius:6px; font-family:ui-monospace,monospace; position:relative;}
+  .json-toolbar{display:flex; gap:.4rem; align-items:center; padding:.35rem .55rem; background:#1c2127; border-bottom:1px solid var(--border); font-size:.6rem; letter-spacing:.5px;}
+  .json-toolbar button{font-size:.6rem; padding:.25rem .5rem;}
+  .json-lines{font-size:.68rem; line-height:1.25; overflow:auto; max-height:480px;}
+  .json-line{display:flex; align-items:flex-start;}
+  .json-line:nth-child(odd){background:#14191e;}
+  .json-line .ln{flex:0 0 auto; width:3.2em; text-align:right; padding:0 .5em 0 .25em; color:#4f5b66; user-select:none; border-right:1px solid #20262c; background:#161b21; font-size:.6rem; line-height:1.25;}
+  .json-line .lc{flex:1 1 auto; padding:0 .6em 0 .6em; white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere;}
+  .json-search{display:flex; gap:.4rem; margin-left:auto; align-items:center;}
+  .json-search input{background:#20262c; border:1px solid var(--border); color:var(--text); border-radius:4px; padding:.25rem .4rem; font-size:.6rem; width:140px;}
+  .json-line.mark{background:#2d3b15 !important;}
+  .detail-panels{display:grid;gap:.25rem;padding:.18rem .22rem .22rem;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));}
+  .detail-card{background:var(--panel);border:1px solid var(--border);border-radius:6px;display:flex;flex-direction:column;overflow:hidden;position:relative;transition:border-color .2s ease, box-shadow .2s ease;}
+  .detail-card.edited{box-shadow:0 0 0 1px var(--accent) inset,0 0 0 1.5px #3d82f640;}
+  .detail-card-header{display:flex;align-items:center;gap:.4rem;padding:.35rem .55rem;font-size:.58rem;letter-spacing:.4px;text-transform:uppercase;cursor:pointer;background:#2a2d31;line-height:1;}
+  .detail-card-header:hover{background:#31353a;}
+  .detail-card-header .arrow{transition:transform .2s ease;font-size:.65rem;color:var(--accent);}
+  .detail-card.collapsed .detail-card-header .arrow{transform:rotate(-90deg);}
+  .detail-card-header .title{font-weight:600;font-size:.6rem;color:var(--text);flex:1 1 auto;display:flex;align-items:center;gap:.4rem;white-space:nowrap;}
+  .detail-card-header .count{background:#3a4047;padding:1px 6px;border-radius:999px;font-size:.5rem;letter-spacing:.4px;color:#c9d1d9;}
+  .detail-card-header .badge{background:var(--accent);color:#fff;padding:1px 6px;border-radius:999px;font-size:.5rem;letter-spacing:.4px;}
+  .detail-card-header button{background:#394049;border:1px solid #4a525d;font-size:.5rem;padding:.22rem .45rem;border-radius:4px;cursor:pointer;color:#d0d6dc;line-height:1;}
+  .detail-card-header button:hover{background:var(--accent-hover);border-color:var(--accent-hover);color:#fff;}
+  .detail-card-body{padding:.45rem .55rem .55rem;display:flex;flex-direction:column;gap:.4rem;max-height:300px;overflow:auto;border-top:1px solid #0004;background:#181b1f;}
+  .detail-card.collapsed .detail-card-body{display:none;}
+  .detail-card-body pre{margin:0;font-size:.68rem;line-height:1.3;background:#101317;border:1px solid #0005;padding:.38rem .42rem;border-radius:4px;overflow:auto;}
+  .detail-toolbar{display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;}
+  .detail-toolbar button{font-size:.5rem;padding:.22rem .45rem;background:#30363d;border:1px solid #3d444c;border-radius:4px;color:#cdd3d8;cursor:pointer;line-height:1;}
+  .detail-toolbar button.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .detail-toolbar button:hover{background:var(--accent-hover);border-color:var(--accent-hover);color:#fff;}
+  .detail-search{margin-left:auto;display:flex;align-items:center;gap:.3rem;}
+  .detail-search input{background:#20262c;border:1px solid var(--border);color:var(--text);border-radius:4px;font-size:.5rem;padding:.2rem .4rem;width:120px;}
+  .json-mini-container{max-height:300px;overflow:auto;position:relative;border:1px solid #0005;border-radius:4px;background:#101317;}
+  .json-mini-line{font-family:ui-monospace,monospace;font-size:.66rem;line-height:1.28;padding:0;display:block;white-space:pre;}
+  .detail-card.wrap-on .json-mini-line{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
+  .detail-card.wrap-off .json-mini-line{white-space:pre;}
+  .json-mini-line:nth-child(odd){background:#14191e;}
+  .json-mini-line.mark{background:#253015;}
+  .json-mini-ln{opacity:.35;user-select:none;width:2.3em;display:inline-block;text-align:right;margin-right:.45em;}
+  .empty-hint{font-size:.55rem;color:var(--muted);padding:.15rem 0;}
+  @media (max-width:900px){.detail-panels{grid-template-columns:repeat(auto-fit,minmax(240px,1fr));padding:.5rem .5rem .6rem;}}
+  .edit-box{border:1px solid var(--border); background:#181b20; border-radius:6px; display:flex; flex-direction:column;}
+  .editor-toolbar{display:flex; flex-wrap:wrap; gap:.4rem; padding:.45rem .6rem; background:#20252b; border-bottom:1px solid var(--border); align-items:center;}
+  .editor-toolbar button{font-size:.65rem; padding:.3rem .55rem;}
+  .editor-toolbar .info{margin-left:auto; font-size:.55rem; letter-spacing:.5px; color:var(--muted); display:flex; gap:.65rem; align-items:center;}
+  .editor-status{font-size:.55rem; padding:2px 6px; border-radius:999px; background:#333; color:#bbb;}
+  .editor-status.ok{background:#0d522d; color:#b7ffd1;}
+  .editor-status.err{background:#5a1e1e; color:#ffb7b7;}
+  .editor-textarea{width:100%; border:0; outline:none; resize:vertical; background:#0f1215; color:#d7e2ec; font-family:ui-monospace,monospace; font-size:.72rem; line-height:1.28; padding:.65rem .75rem; min-height:360px; box-sizing:border-box; tab-size:2;}
+  .editor-textarea.invalid{background:#281314;}
+  .editor-footer{display:flex; justify-content:space-between; padding:.35rem .55rem; border-top:1px solid var(--border); background:#20252b; font-size:.55rem; letter-spacing:.5px; color:var(--muted);}
+  .diff-original{white-space:pre-wrap; font-size:.65rem; line-height:1.25; max-height:240px; overflow:auto; background:#101317; margin:0; border-top:1px solid var(--border); padding:.6rem .7rem;}
+  .toggle-diff{background:#444c56;}
+  .part-line{display:flex; align-items:flex-start; gap:.5rem; padding:2px 6px; font-size:.7rem; line-height:1.2; background:#202327;}
+  .part-line:not(:last-child){border-bottom:0.5px solid #30363d;}
+  .part-tag{flex:0 0 auto; background:#3a4350; color:#d1e2ff; padding:2px 6px; border-radius:4px; font-size:.55rem; letter-spacing:.5px; text-transform:uppercase;}
+  .part-text{white-space:pre-wrap; word-break:break-word; flex:1 1 auto;}
+  .part-line img{max-width:180px; border:1px solid var(--border); border-radius:4px; background:#000;}
+  .part-text a{color:#4da3ff; text-decoration:underline;}
+  .msg-line a{color:#4da3ff; text-decoration:underline;}
+  .toolbar{display:flex; gap:.4rem; align-items:center;} .tag{background:var(--panel-alt); border:1px solid var(--border); padding:.15rem .4rem; border-radius:999px; font-size:.6rem; letter-spacing:.5px;} .two-col-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:.75rem; margin-top:.5rem;} .highlight-answer{background:var(--accent); color:#fff;} .nav-group{display:flex; gap:.4rem; align-items:center;} .jump-input{width:70px;} #dropzone{border:2px dashed var(--border); margin:.25rem 1rem 0; padding:.75rem; text-align:center; font-size:.8rem; color:var(--muted); border-radius:6px;} #dropzone.dragover{border-color:var(--accent); color:var(--accent); background:#1b283b;} .footer{padding:.5rem .75rem; font-size:.65rem; text-align:right; color:var(--muted); border-top:1px solid var(--border);} .edited-flag{color:var(--accent);} @media (max-width:1100px){.columns{flex-direction:column;}}
   </style>
 </head>
-<body class="font-inter bg-neutral-100 min-h-screen flex flex-col">
-  <!-- 导航栏 -->
-  <header class="bg-white border-b border-neutral-200 shadow-sm sticky top-0 z-10">
-    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-      <div class="flex items-center space-x-2">
-        <i class="fa fa-line-chart text-primary text-2xl"></i>
-        <h1 class="text-xl font-semibold text-neutral-700">Plotly JSON 渲染器</h1>
+<body>
+  <header>
+    <h1 id="titleText">Trajectory 浏览器</h1>
+    <div id="fileArea" class="file-area">
+      <div class="file-actions">
+        <input type="file" id="fileInput" multiple accept=".jsonl" style="display:none" />
+        <button id="selectFilesBtn" class="primary">选择文件</button>
+        <button id="folderBtn">选择文件夹</button>
+        <input type="file" id="dirInput" webkitdirectory directory multiple style="display:none" />
       </div>
-      <div class="flex items-center space-x-4">
-        <button id="theme-toggle" class="p-2 rounded-full hover:bg-neutral-100 transition-colors">
-          <i class="fa fa-moon-o text-neutral-500"></i>
-        </button>
-        <a href="https://plotly.com/javascript/reference/" target="_blank" rel="noopener noreferrer" 
-           class="text-primary hover:text-primary/80 flex items-center">
-          <i class="fa fa-book mr-1"></i>
-          <span class="hidden md:inline">文档</span>
-        </a>
-      </div>
+      <div id="fileHint" class="file-hint">拖拽 JSONL 文件到此处 或 点击按钮选择</div>
     </div>
+    <select id="trajectorySelect" title="已加载的文件" disabled></select>
+    <div class="nav-group">
+      <button id="firstStep" disabled>&lt;&lt;</button><button id="prevStep" disabled>&lt;</button>
+      <span id="stepLabel">Step</span><input id="jumpStep" class="jump-input" type="number" min="1" value="1" disabled />
+      <span id="totalSteps">/ 0</span><button id="nextStep" disabled>&gt;</button><button id="lastStep" disabled>&gt;&gt;</button>
+    </div>
+    <div class="toolbar">
+      <button id="exportCurrent" disabled>导出当前 Step</button>
+      <button id="exportTrajectory" disabled>导出轨迹</button>
+      <select id="langSelect" title="Language">
+        <option value="zh">中文</option>
+        <option value="en">English</option>
+      </select>
+    </div>
+    <div class="grow"></div><div class="status" id="status">未加载文件</div>
   </header>
-
-  <!-- 主要内容 -->
-  <main class="flex-grow container mx-auto px-4 py-6">
-    <!-- 介绍卡片 -->
-    <div class="bg-white rounded-xl p-6 mb-6 card-hover editor-shadow">
-      <h2 class="text-lg font-semibold text-neutral-700 mb-2">输入 Plotly JSON</h2>
-      <p class="text-neutral-500 text-sm mb-4">
-        请输入有效的 Plotly JSON 数据，系统将自动渲染图表。你可以从
-        <a href="https://plotly.com/javascript/" target="_blank" rel="noopener noreferrer" 
-           class="text-primary hover:underline">Plotly 官方示例</a>
-        获取 JSON 格式的数据。
-      </p>
-      
-      <!-- 示例按钮 -->
-      <div class="flex flex-wrap gap-2 mb-4">
-        <button id="example-line" class="px-3 py-1 bg-primary/10 text-primary rounded-md text-sm hover:bg-primary/20 transition-colors">
-          <i class="fa fa-line-chart mr-1"></i>折线图
-        </button>
-        <button id="example-bar" class="px-3 py-1 bg-primary/10 text-primary rounded-md text-sm hover:bg-primary/20 transition-colors">
-          <i class="fa fa-bar-chart mr-1"></i>柱状图
-        </button>
-        <button id="example-pie" class="px-3 py-1 bg-primary/10 text-primary rounded-md text-sm hover:bg-primary/20 transition-colors">
-          <i class="fa fa-pie-chart mr-1"></i>饼图
-        </button>
-        <button id="example-scatter" class="px-3 py-1 bg-primary/10 text-primary rounded-md text-sm hover:bg-primary/20 transition-colors">
-          <i class="fa fa-dot-circle-o mr-1"></i>散点图
-        </button>
-        <button id="clear-btn" class="px-3 py-1 bg-neutral-100 text-neutral-500 rounded-md text-sm hover:bg-neutral-200 transition-colors">
-          <i class="fa fa-trash-o mr-1"></i>清空
-        </button>
-      </div>
-      
-      <!-- JSON 编辑器 -->
-      <div class="relative">
-        <textarea id="json-input" class="w-full h-64 p-4 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all editor-shadow scrollbar-hide font-mono text-sm" 
-                  placeholder='{"data": [{"type": "scatter", "x": [1, 2, 3], "y": [4, 5, 6]}]}'></textarea>
-        <div id="validation-message" class="hidden absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium"></div>
-      </div>
-      
-      <!-- 渲染按钮 -->
-      <div class="mt-4 flex justify-end">
-        <button id="render-btn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 focus:ring-2 focus:ring-primary/30 transition-all flex items-center">
-          <i class="fa fa-refresh mr-2"></i>
-          渲染图表
-        </button>
-      </div>
-    </div>
-    
-    <!-- 图表显示区域 -->
-    <div class="bg-white rounded-xl p-6 card-hover editor-shadow">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-lg font-semibold text-neutral-700">渲染结果</h2>
-        <div class="flex space-x-2">
-          <button id="download-png" class="px-3 py-1 bg-neutral-100 text-neutral-600 rounded-md text-sm hover:bg-neutral-200 transition-colors">
-            <i class="fa fa-download mr-1"></i>PNG
-          </button>
-          <button id="download-svg" class="px-3 py-1 bg-neutral-100 text-neutral-600 rounded-md text-sm hover:bg-neutral-200 transition-colors">
-            <i class="fa fa-download mr-1"></i>SVG
-          </button>
+  <!-- dropzone merged into fileArea -->
+  <div class="collapse-bar" id="collapseBar"><span class="chevron">▼</span><h2 id="detailHeader">步骤详情 (tools / inference_args / meta)</h2><span id="detailSummary" class="status"></span></div>
+  <section id="details"></section>
+  <main>
+    <div class="columns">
+      <div class="col" id="inputCol">
+        <div class="panel-header"><h3 class="panel-title" id="inputPanelTitle">Input Messages</h3>
+          <select id="inputMode" class="mode-select"><option value="rich" data-i18n="mode.rich">富视图</option><option value="json" data-i18n="mode.json">JSON</option><option value="edit" data-i18n="mode.edit">编辑</option></select>
         </div>
+        <div id="inputMessages"></div>
       </div>
-      
-      <!-- 图表容器 -->
-      <div id="chart-container" class="w-full h-[400px] border border-neutral-200 rounded-lg overflow-hidden bg-neutral-50">
-        <div class="flex flex-col items-center justify-center h-full text-neutral-400">
-          <i class="fa fa-area-chart text-5xl mb-3 opacity-30"></i>
-          <p>请输入 JSON 数据并点击"渲染图表"按钮</p>
+      <div class="col" id="outputCol">
+        <div class="panel-header"><h3 class="panel-title" id="outputPanelTitle">Output Messages</h3>
+          <select id="outputMode" class="mode-select"><option value="rich" data-i18n="mode.rich">富视图</option><option value="json" data-i18n="mode.json">JSON</option><option value="edit" data-i18n="mode.edit">编辑</option></select>
         </div>
-      </div>
-      
-      <!-- 错误信息 -->
-      <div id="error-message" class="mt-4 p-3 bg-red-50 border border-red-100 rounded-lg text-red-600 text-sm hidden">
-        <i class="fa fa-exclamation-circle mr-2"></i>
-        <span>JSON 格式错误，请检查你的输入</span>
+        <div id="outputMessages"></div>
       </div>
     </div>
   </main>
-
-  <!-- 页脚 -->
-  <footer class="bg-white border-t border-neutral-200 py-4 mt-8">
-    <div class="container mx-auto px-4 text-center text-neutral-500 text-sm">
-      <p>© 2025 Plotly JSON 渲染器 | 使用 <a href="https://plotly.com/javascript/" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">Plotly.js</a> 构建</p>
-    </div>
-  </footer>
-
+  <div class="footer">构建时间: <span id="buildTime"></span></div>
   <script>
-    // DOM 元素
-    const jsonInput = document.getElementById('json-input');
-    const renderBtn = document.getElementById('render-btn');
-    const chartContainer = document.getElementById('chart-container');
-    const errorMessage = document.getElementById('error-message');
-    const validationMessage = document.getElementById('validation-message');
-    const themeToggle = document.getElementById('theme-toggle');
-    const downloadPNG = document.getElementById('download-png');
-    const downloadSVG = document.getElementById('download-svg');
-    const clearBtn = document.getElementById('clear-btn');
-    
-    // 示例按钮
-    const exampleLine = document.getElementById('example-line');
-    const exampleBar = document.getElementById('example-bar');
-    const examplePie = document.getElementById('example-pie');
-    const exampleScatter = document.getElementById('example-scatter');
-    
-    // 示例数据
-    const exampleData = {
-      line: {
-        data: [{
-          type: 'scatter',
-          mode: 'lines+markers',
-          x: [1, 2, 3, 4, 5],
-          y: [10, 15, 13, 17, 20],
-          marker: { color: '#165DFF' },
-          line: { color: '#165DFF' }
-        }],
-        layout: {
-          title: '折线图示例',
-          xaxis: { title: 'X轴' },
-          yaxis: { title: 'Y轴' },
-          width: '100%',
-          height: 400,
-          margin: { t: 40, b: 40, l: 50, r: 20 }
-        }
-      },
-      bar: {
-        data: [{
-          type: 'bar',
-          x: ['苹果', '香蕉', '橙子', '葡萄', '草莓'],
-          y: [12, 19, 3, 5, 2],
-          marker: { color: '#36CFC9' }
-        }],
-        layout: {
-          title: '柱状图示例',
-          xaxis: { title: '水果' },
-          yaxis: { title: '数量' },
-          width: '100%',
-          height: 400,
-          margin: { t: 40, b: 40, l: 50, r: 20 }
-        }
-      },
-      pie: {
-        data: [{
-          type: 'pie',
-          labels: ['衬衫', '羊毛衫', '雪纺衫', '裤子', '高跟鞋', '袜子'],
-          values: [35, 25, 25, 10, 3, 2],
-          marker: {
-            colors: [
-              '#165DFF', '#36CFC9', '#FF7D00', 
-              '#F7BA1E', '#722ED1', '#EB0A1E'
-            ]
-          }
-        }],
-        layout: {
-          title: '饼图示例',
-          width: '100%',
-          height: 400,
-          margin: { t: 40, b: 20, l: 20, r: 20 }
-        }
-      },
-      scatter: {
-        data: [{
-          type: 'scatter',
-          mode: 'markers',
-          x: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-          y: [10, 20, 30, 25, 15, 35, 40, 30, 20, 10],
-          marker: {
-            size: [10, 15, 20, 25, 30, 35, 40, 35, 30, 25],
-            color: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-            colorscale: 'Viridis',
-            showscale: true
-          }
-        }],
-        layout: {
-          title: '散点图示例',
-          xaxis: { title: 'X值' },
-          yaxis: { title: 'Y值' },
-          width: '100%',
-          height: 400,
-          margin: { t: 40, b: 40, l: 50, r: 20 }
-        }
-      }
+  const state={files:new Map(),currentFile:null,currentIndex:0,wrapStates:{},lang:(navigator.language||'').toLowerCase().startsWith('zh')?'zh':'en'};
+    const el=id=>document.getElementById(id);
+  const fileInput=el('fileInput'),trajectorySelect=el('trajectorySelect');
+    const firstStep=el('firstStep'),prevStep=el('prevStep'),nextStep=el('nextStep'),lastStep=el('lastStep');
+    const jumpStep=el('jumpStep'),totalSteps=el('totalSteps'),statusEl=el('status');
+    const inputMessagesEl=el('inputMessages'),outputMessagesEl=el('outputMessages');
+  const detailsEl=el('details'),collapseBar=el('collapseBar');
+    const exportCurrent=el('exportCurrent'),exportTrajectory=el('exportTrajectory');
+  const detailSummary=el('detailSummary');
+    const inputMode=el('inputMode'),outputMode=el('outputMode');
+  const folderBtn=el('folderBtn'),dirInput=el('dirInput');
+  const fileArea=el('fileArea');
+  const selectFilesBtn=el('selectFilesBtn');
+  const fileHint=el('fileHint');
+    const langSelect=el('langSelect');
+    const titleText=el('titleText');
+    const stepLabel=el('stepLabel');
+    const detailHeader=el('detailHeader');
+    const inputPanelTitle=el('inputPanelTitle');
+    const outputPanelTitle=el('outputPanelTitle');
+
+    // --- Compact header helpers ---
+    function enterCompact(){fileArea.classList.add('compact'); if(fileHint) fileHint.style.display='none';}
+    function exitCompact(){fileArea.classList.remove('compact'); if(fileHint) fileHint.style.display='';}
+
+    const I18N={
+  zh:{title:'Trajectory 浏览器',load:'载入',selectFolder:'选择文件夹',selectFiles:'选择文件',hint:'拖拽 JSONL 文件到此处 或 点击按钮选择',skipInfo:'已读取: {loaded} 个，跳过非 JSONL: {skipped} 个',notLoaded:'未加载文件',dragDrop:'拖拽 JSONL 文件到此处 或 使用上方文件选择',step:'Step',highlight:'高亮答案',unhighlight:'取消高亮',exportCurrent:'导出当前 Step',exportTrajectory:'导出轨迹',detailsHeader:'步骤详情 (tools / inference_args / meta)',inputMessages:'Input Messages',outputMessages:'Output Messages',mode:{rich:'富视图',json:'JSON',edit:'编辑'},copy:'复制',copied:'已复制',fold:'折叠',expandStructure:'展开结构',expandAll:'展开',searchPlaceholder:'搜索...',wrapOn:'自适应换行',wrapOff:'横向滚动',edit:'编辑',edited:'已编辑',empty:'(空)',tools:'Tools',inferenceArgs:'Inference Args',meta:'Meta',originalStep:'原始 Step JSON',save:'保存',format:'格式化',fullscreen:'全屏',restore:'还原',reset:'恢复原始',back:'返回',diff:'对比',hideDiff:'隐藏对比',validJson:'有效 JSON',invalidRootArray:'根必须是数组',editingArray:'编辑 JSON 数组: message 列表',escHint:'ESC 取消 / Ctrl+S 保存',parseFailed:'解析失败: ',loadingParsing:'解析文件...'},
+  en:{title:'Trajectory Browser',load:'Load',selectFolder:'Select Folder',selectFiles:'Select Files',hint:'Drag JSONL files here or click buttons',skipInfo:'Loaded: {loaded}, skipped non-JSONL: {skipped}',notLoaded:'No file loaded',dragDrop:'Drag JSONL files here or use selectors above',step:'Step',highlight:'Highlight Answer',unhighlight:'Unhighlight',exportCurrent:'Export Current Step',exportTrajectory:'Export Trajectory',detailsHeader:'Step Details (tools / inference_args / meta)',inputMessages:'Input Messages',outputMessages:'Output Messages',mode:{rich:'Rich View',json:'JSON',edit:'Edit'},copy:'Copy',copied:'Copied',fold:'Fold',expandStructure:'Expand Structure',expandAll:'Expand',searchPlaceholder:'Search...',wrapOn:'Wrap',wrapOff:'Horizontal',edit:'Edit',edited:'Edited',empty:'(empty)',tools:'Tools',inferenceArgs:'Inference Args',meta:'Meta',originalStep:'Raw Step JSON',save:'Save',format:'Format',fullscreen:'Fullscreen',restore:'Restore',reset:'Reset',back:'Back',diff:'Diff',hideDiff:'Hide Diff',validJson:'Valid JSON',invalidRootArray:'Root must be an array',editingArray:'Edit JSON array: messages list',escHint:'ESC Cancel / Ctrl+S Save',parseFailed:'Parse failed: ',loadingParsing:'Parsing files...'}
     };
-    
-    // 验证 JSON 输入
-    function validateJSON(jsonString) {
-      try {
-        if (!jsonString.trim()) return null;
-        const parsed = JSON.parse(jsonString);
-        validationMessage.textContent = '格式正确';
-        validationMessage.className = 'absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium bg-green-50 text-green-600';
-        validationMessage.classList.remove('hidden');
-        errorMessage.classList.add('hidden');
-        return parsed;
-      } catch (e) {
-        validationMessage.textContent = '格式错误';
-        validationMessage.className = 'absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium bg-red-50 text-red-600';
-        validationMessage.classList.remove('hidden');
-        errorMessage.classList.remove('hidden');
-        errorMessage.querySelector('span').textContent = `JSON 格式错误: ${e.message}`;
-        return null;
-      }
-    }
-    
-    // 渲染图表
-    function renderChart(jsonData) {
-      // 清除现有图表
-      while (chartContainer.firstChild) {
-        chartContainer.removeChild(chartContainer.firstChild);
-      }
-      
-      // 创建新的图表容器
-      const plotContainer = document.createElement('div');
-      plotContainer.id = 'plotly-chart';
-      plotContainer.className = 'w-full h-full';
-      chartContainer.appendChild(plotContainer);
-      
-      try {
-        // 检查数据格式
-        if (Array.isArray(jsonData)) {
-          // 如果是数据数组，直接使用
-          Plotly.newPlot('plotly-chart', jsonData);
-        } else if (typeof jsonData === 'object' && jsonData !== null) {
-          // 如果是包含 data 和 layout 的对象
-          const { data, layout = {}, config = {} } = jsonData;
-          if (Array.isArray(data)) {
-            // 设置默认布局
-            const defaultLayout = {
-              width: '100%',
-              height: 400,
-              margin: { t: 40, b: 40, l: 50, r: 20 },
-              font: { family: 'Inter, sans-serif' }
-            };
-            const mergedLayout = { ...defaultLayout, ...layout };
-            
-            // 设置默认配置
-            const defaultConfig = {
-              responsive: true,
-              displayModeBar: true,
-              toImageButtonOptions: {
-                format: 'png',
-                filename: 'plotly_chart',
-                height: 400,
-                width: 800,
-                scale: 2
-              }
-            };
-            const mergedConfig = { ...defaultConfig, ...config };
-            
-            Plotly.newPlot('plotly-chart', data, mergedLayout, mergedConfig);
-          } else {
-            throw new Error('JSON 数据中缺少有效的 data 数组');
-          }
-        } else {
-          throw new Error('JSON 格式不支持，应为数组或对象');
-        }
-        
-        // 启用下载按钮
-        downloadPNG.disabled = false;
-        downloadSVG.disabled = false;
-      } catch (e) {
-        errorMessage.classList.remove('hidden');
-        errorMessage.querySelector('span').textContent = `渲染错误: ${e.message}`;
-        downloadPNG.disabled = true;
-        downloadSVG.disabled = true;
-      }
-    }
-    
-    // 下载图表
-    function downloadChart(format) {
-      if (document.getElementById('plotly-chart')) {
-        Plotly.downloadImage('plotly-chart', {
-          format: format,
-          height: 800,
-          width: 1200,
-          scale: 2
-        });
-      }
-    }
-    
-    // 设置示例数据
-    function setExampleData(exampleKey) {
-      const example = exampleData[exampleKey];
-      jsonInput.value = JSON.stringify(example, null, 2);
-      validateJSON(jsonInput.value);
-    }
-    
-    // 事件监听器
-    renderBtn.addEventListener('click', () => {
-      const jsonData = validateJSON(jsonInput.value);
-      if (jsonData) {
-        renderChart(jsonData);
-      }
-    });
-    
-    jsonInput.addEventListener('input', () => {
-      validateJSON(jsonInput.value);
-    });
-    
-    // 主题切换
-    themeToggle.addEventListener('click', () => {
-      document.body.classList.toggle('dark');
-      const icon = themeToggle.querySelector('i');
-      if (icon.classList.contains('fa-moon-o')) {
-        icon.classList.replace('fa-moon-o', 'fa-sun-o');
-      } else {
-        icon.classList.replace('fa-sun-o', 'fa-moon-o');
-      }
-    });
-    
-    // 下载按钮
-    downloadPNG.addEventListener('click', () => downloadChart('png'));
-    downloadSVG.addEventListener('click', () => downloadChart('svg'));
-    
-    // 清空按钮
-    clearBtn.addEventListener('click', () => {
-      jsonInput.value = '';
-      validationMessage.classList.add('hidden');
-      errorMessage.classList.add('hidden');
-      
-      // 清除图表
-      while (chartContainer.firstChild) {
-        chartContainer.removeChild(chartContainer.firstChild);
-      }
-      const placeholder = document.createElement('div');
-      placeholder.className = 'flex flex-col items-center justify-center h-full text-neutral-400';
-      placeholder.innerHTML = `
-        <i class="fa fa-area-chart text-5xl mb-3 opacity-30"></i>
-        <p>请输入 JSON 数据并点击"渲染图表"按钮</p>
-      `;
-      chartContainer.appendChild(placeholder);
-      
-      // 禁用下载按钮
-      downloadPNG.disabled = true;
-      downloadSVG.disabled = true;
-    });
-    
-    // 示例按钮事件
-    exampleLine.addEventListener('click', () => setExampleData('line'));
-    exampleBar.addEventListener('click', () => setExampleData('bar'));
-    examplePie.addEventListener('click', () => setExampleData('pie'));
-    exampleScatter.addEventListener('click', () => setExampleData('scatter'));
-    
-    // 初始禁用下载按钮
-    downloadPNG.disabled = true;
-    downloadSVG.disabled = true;
-    
-    // 添加键盘快捷键 (Ctrl+Enter 渲染图表)
-    jsonInput.addEventListener('keydown', (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        e.preventDefault();
-        renderBtn.click();
-      }
-    });
-    
-    // 初始验证
-    validateJSON(jsonInput.value);
+    function t(k){const lang=I18N[state.lang]||I18N.zh;return k.split('.').reduce((o,p)=>o&&o[p],lang)||k;}
+  function applyLangStatic(){titleText.textContent=t('title');folderBtn.textContent=t('selectFolder');selectFilesBtn.textContent=t('selectFiles');fileHint.textContent=t('hint');if(!state.files.size){statusEl.textContent=t('notLoaded');statusEl.style.display='';}stepLabel.textContent=t('step');detailHeader.textContent=t('detailsHeader');inputPanelTitle.textContent=t('inputMessages');outputPanelTitle.textContent=t('outputMessages');[...inputMode.options].forEach(o=>{const key=o.getAttribute('data-i18n');if(key)o.textContent=t(key);});[...outputMode.options].forEach(o=>{const key=o.getAttribute('data-i18n');if(key)o.textContent=t(key);});exportCurrent.textContent=t('exportCurrent');exportTrajectory.textContent=t('exportTrajectory');}
+    langSelect.value=state.lang;langSelect.addEventListener('change',()=>{state.lang=langSelect.value;applyLangStatic();render();});
+    document.addEventListener('DOMContentLoaded',()=>el('buildTime').textContent=new Date().toLocaleString());
+    function setStatus(msg,ok=true){statusEl.textContent=msg;statusEl.style.color=ok?'var(--muted)':'var(--danger)';}
+  selectFilesBtn.addEventListener('click',()=>fileInput.click());
+  fileInput.addEventListener('change',()=>{if(!fileInput.files.length)return;enterCompact();loadSelectedFiles();});
+    function readFileAsText(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=e=>rej(e);r.readAsText(f);});}
+  async function loadSelectedFiles(){if(!fileInput.files.length)return;let hadError=false;for(const f of fileInput.files){try{const text=await readFileAsText(f);const {steps,rawLines}=parseJSONL(text);state.files.set(f.name,{steps,rawLines});}catch(e){console.error(e);hadError=true;setStatus(t('parseFailed')+f.name,false);} }refreshFileSelect();if(!hadError){statusEl.textContent='';statusEl.style.display='none';enterCompact();}fileInput.value='';}
+    folderBtn.addEventListener('click',()=>dirInput.click());
+  dirInput.addEventListener('change',()=>{if(!dirInput.files.length)return;enterCompact();loadDirectoryFiles(dirInput.files);});
+  async function loadDirectoryFiles(fileList){let hadError=false;statusEl.style.display='';setStatus(t('loadingParsing'));let loaded=0,skipped=0;for(const f of fileList){if(!f.name.toLowerCase().endsWith('.jsonl')){skipped++;continue;}const display=f.webkitRelativePath||f.name;try{const text=await readFileAsText(f);const {steps,rawLines}=parseJSONL(text);state.files.set(display,{steps,rawLines});loaded++;}catch(e){console.error(e);hadError=true;setStatus(t('parseFailed')+display,false);} }refreshFileSelect();if(!hadError){if(loaded||skipped){const tpl=t('skipInfo').replace('{loaded}',loaded).replace('{skipped}',skipped);setStatus(tpl);}else{statusEl.textContent='';statusEl.style.display='none';}if(loaded) enterCompact();}dirInput.value='';}
+  function refreshFileSelect(){trajectorySelect.innerHTML='';for(const name of state.files.keys()){const opt=document.createElement('option');opt.value=name;opt.textContent=name+' ('+state.files.get(name).steps.length+')';trajectorySelect.appendChild(opt);}trajectorySelect.disabled=!state.files.size;if(state.files.size){if(!state.currentFile||!state.files.has(state.currentFile))state.currentFile=trajectorySelect.options[0].value;trajectorySelect.value=state.currentFile;state.currentIndex=0;enterCompact();render();}else {clearDisplay();exitCompact();}}
+    trajectorySelect.addEventListener('change',()=>{state.currentFile=trajectorySelect.value;state.currentIndex=0;render();});
+  function clearDisplay(){inputMessagesEl.innerHTML='';outputMessagesEl.innerHTML='';detailsEl.innerHTML='';totalSteps.textContent='/ 0';[firstStep,prevStep,nextStep,lastStep,jumpStep,exportCurrent,exportTrajectory,inputMode,outputMode].forEach(b=>b.disabled=true);}
+  function render(){if(!state.currentFile){clearDisplay();applyLangStatic();return;}const {steps}=state.files.get(state.currentFile);const total=steps.length;if(!total){clearDisplay();applyLangStatic();return;}state.currentIndex=Math.min(Math.max(0,state.currentIndex),total-1);const stepObj=steps[state.currentIndex];totalSteps.textContent='/ '+total;jumpStep.disabled=false;jumpStep.value=state.currentIndex+1;[firstStep,prevStep,nextStep,lastStep,exportCurrent,exportTrajectory,inputMode,outputMode].forEach(b=>b.disabled=false);firstStep.disabled=prevStep.disabled=state.currentIndex===0;lastStep.disabled=nextStep.disabled=state.currentIndex===total-1;renderMessages(stepObj);renderDetails(stepObj);}applyLangStatic();
+    function renderMessages(stepObj){const inList=stepObj.edited_input_messages||stepObj.input_messages||[];const outList=stepObj.edited_output_messages||stepObj.output_messages||[];inputMessagesEl.innerHTML='';if(inputMode.value==='json'){inputMessagesEl.appendChild(buildJsonView(inList,'input'));}else if(inputMode.value==='edit'){inputMessagesEl.appendChild(buildEditArea(stepObj,'input'));}else{inList.forEach((m,i)=>inputMessagesEl.appendChild(createMessageEl(m,i,'input',stepObj.is_answer,!!stepObj.edited_input_messages)));}outputMessagesEl.innerHTML='';if(outputMode.value==='json'){outputMessagesEl.appendChild(buildJsonView(outList,'output'));}else if(outputMode.value==='edit'){outputMessagesEl.appendChild(buildEditArea(stepObj,'output'));}else{outList.forEach((m,i)=>outputMessagesEl.appendChild(createMessageEl(m,i,'output',stepObj.is_answer,!!stepObj.edited_output_messages)));}}
+    function buildJsonView(data,label){const box=document.createElement('div');box.className='json-block';const toolbar=document.createElement('div');toolbar.className='json-toolbar';toolbar.innerHTML=`<span>${label==='input'?t('inputMessages'):t('outputMessages')} JSON</span>`;const copyBtn=document.createElement('button');copyBtn.textContent=t('copy');const collapseBtn=document.createElement('button');collapseBtn.textContent=t('fold');const expandAllBtn=document.createElement('button');expandAllBtn.textContent=t('expandAll');const searchWrap=document.createElement('div');searchWrap.className='json-search';const searchInput=document.createElement('input');searchInput.placeholder=t('searchPlaceholder');const searchCount=document.createElement('span');searchCount.textContent='0';searchWrap.append(searchInput,searchCount);toolbar.append(copyBtn,collapseBtn,expandAllBtn,searchWrap);box.appendChild(toolbar);const jsonStr=JSON.stringify(data,null,2);const linesContainer=document.createElement('div');linesContainer.className='json-lines';const lines=jsonStr.split('\n');let folded=false;lines.forEach((ln,i)=>{const lineDiv=document.createElement('div');lineDiv.className='json-line';const lnSpan=document.createElement('span');lnSpan.className='ln';lnSpan.textContent=i+1;const lcSpan=document.createElement('span');lcSpan.className='lc';lcSpan.innerHTML=syntaxHighlight(escapeHtml(ln));lineDiv.append(lnSpan,lcSpan);linesContainer.appendChild(lineDiv);});box.appendChild(linesContainer);copyBtn.onclick=()=>{navigator.clipboard.writeText(jsonStr);copyBtn.textContent=t('copied');setTimeout(()=>copyBtn.textContent=t('copy'),1200);};collapseBtn.onclick=()=>{folded=!folded;collapseBtn.textContent=folded?t('expandStructure'):t('fold');if(folded){foldJson(linesContainer);}else{linesContainer.innerHTML='';jsonStr.split('\n').forEach((ln,i)=>{const lineDiv=document.createElement('div');lineDiv.className='json-line';const lnSpan=document.createElement('span');lnSpan.className='ln';lnSpan.textContent=i+1;const lcSpan=document.createElement('span');lcSpan.className='lc';lcSpan.innerHTML=syntaxHighlight(escapeHtml(ln));lineDiv.append(lnSpan,lcSpan);linesContainer.appendChild(lineDiv);});}};expandAllBtn.onclick=()=>{folded=false;collapseBtn.textContent=t('fold');linesContainer.innerHTML='';jsonStr.split('\n').forEach((ln,i)=>{const lineDiv=document.createElement('div');lineDiv.className='json-line';const lnSpan=document.createElement('span');lnSpan.className='ln';lnSpan.textContent=i+1;const lcSpan=document.createElement('span');lcSpan.className='lc';lcSpan.innerHTML=syntaxHighlight(escapeHtml(ln));lineDiv.append(lnSpan,lcSpan);linesContainer.appendChild(lineDiv);});};function foldJson(container){const raw=jsonStr.split('\n');const out=[];let level=0;raw.forEach(line=>{const trimmed=line.trim();const open=trimmed.match(/[\{\[]$/);const close=trimmed.match(/^[\}\]]/);if(close)level=Math.max(0,level-1);if(open){out.push({line,placeholder:true,level});level++;}else if(close){out.push({line,placeholder:false,level});}else{if(level>2){if(out.length&&out[out.length-1].placeholder){}else out.push({line:'  '.repeat(level)+'…',placeholder:true,level});}else out.push({line,placeholder:false,level});}});container.innerHTML='';out.forEach((o,i)=>{const div=document.createElement('div');div.className='json-line';const lnSpan=document.createElement('span');lnSpan.className='ln';lnSpan.textContent=i+1;const lcSpan=document.createElement('span');lcSpan.className='lc';lcSpan.innerHTML=syntaxHighlight(escapeHtml(o.line));div.append(lnSpan,lcSpan);container.appendChild(div);});}
+      searchInput.addEventListener('input',()=>{const q=searchInput.value.trim();let count=0;if(!q){[...linesContainer.querySelectorAll('.json-line')].forEach(l=>l.classList.remove('mark'));searchCount.textContent='0';return;}const reg=new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i');[...linesContainer.querySelectorAll('.json-line')].forEach(l=>{const text=l.textContent; if(reg.test(text)){l.classList.add('mark');count++;}else l.classList.remove('mark');});searchCount.textContent=count;});return box;}
+  function createMessageEl(msg,idx,kind,isAnswer,editedFlag=false){const div=document.createElement('div');const role=(msg.role||msg.sender||(kind==='input'?'user':'assistant'));const collapsedDefault=role==='system';div.className='message'+(collapsedDefault?' collapsed':'');const metaItems=[];if(msg.name)metaItems.push('name='+msg.name);if(msg.type)metaItems.push(msg.type);if(Array.isArray(msg.tool_calls)&&msg.tool_calls.length)metaItems.push('tool_calls='+msg.tool_calls.length);const metaLine=metaItems.join(' • ');const header=document.createElement('div');header.className='msg-header';header.innerHTML=`<span class="arrow">▶</span><span class="msg-role">${escapeHtml(role)}</span><span>#${idx+1}</span>${metaLine?'<span>'+escapeHtml(metaLine)+'</span>':''}${editedFlag?`<span class="edited-badge">${t('edited')}</span>`:''}`;header.addEventListener('click',()=>{div.classList.toggle('collapsed');});div.appendChild(header);const body=document.createElement('div');body.className='msg-body';if(Array.isArray(msg.content) && msg.content.some(p=>p&&typeof p==='object'&&p.type)){body.appendChild(renderTypedParts(msg.content));} else {const contentText=deriveContent(msg);body.appendChild(renderRichContent(contentText));}if(Array.isArray(msg.tool_calls)&&msg.tool_calls.length){const toolsPre=document.createElement('pre');toolsPre.innerHTML=syntaxHighlight(JSON.stringify(msg.tool_calls,null,2));body.appendChild(toolsPre);}if(!(Array.isArray(msg.content)&&msg.content.some(p=>p&&typeof p==='object'&&p.type==='image'))){const images=collectImages(msg);if(images.length){const imgWrap=document.createElement('div');imgWrap.className='mm-images';images.forEach(src=>{const im=document.createElement('img');im.src=src;imgWrap.appendChild(im);});body.appendChild(imgWrap);}}div.appendChild(body);return div;}
+  function renderTypedParts(parts){const wrap=document.createElement('div');wrap.className='msg-lines';parts.forEach(part=>{if(!part||typeof part!=='object')return;const line=document.createElement('div');line.className='part-line';const tag=document.createElement('span');tag.className='part-tag';tag.textContent=(part.type||'data').toUpperCase();line.appendChild(tag);if(part.type==='image'||part.type==='image_url'){let src=null;if(part.data)src=part.data.startsWith('data:')?part.data:'data:image/png;base64,'+part.data;else if(part.image_url)src=typeof part.image_url==='string'?part.image_url:part.image_url.url;else if(part.url)src=part.url;if(src){const im=document.createElement('img');im.src=src;line.appendChild(im);} } else {const txtHolder=document.createElement('span');txtHolder.className='part-text';const raw=part.text||part.content||part.value||JSON.stringify(part);const str=typeof raw==='string'?raw:JSON.stringify(raw);txtHolder.innerHTML=highlightXml(inlineMarkdown(str));line.appendChild(txtHolder);}wrap.appendChild(line);});return wrap;}
+  function collectImages(msg){const arr=[];const pushIf=(src)=>{if(src)arr.push(src);};if(msg.image)pushIf(msg.image);if(msg.image_url)pushIf(typeof msg.image_url==='string'?msg.image_url:msg.image_url.url);if(Array.isArray(msg.images))msg.images.forEach(pushIf);if(Array.isArray(msg.content))msg.content.forEach(part=>{if(!part||typeof part!=='object')return;try{if(part.type==='image_url'&&part.image_url)pushIf(typeof part.image_url==='string'?part.image_url:part.image_url.url);else if(part.type==='image'&&part.data)pushIf(part.data.startsWith('data:')?part.data:'data:image/png;base64,'+part.data);}catch{}});return arr;}
+  function renderRichContent(text){const wrap=document.createElement('div');wrap.className='msg-content';wrap.appendChild(buildMarkdownLines(text));return wrap;}
+  function buildMarkdownLines(text){const container=document.createElement('div');container.className='msg-lines';if(!text){return container;}const tokens=parseMarkdownToTokens(text);tokens.forEach(t=>{if(t.type==='code'){const pre=document.createElement('pre');pre.className='code-block';const code=document.createElement('code');code.textContent=t.content;pre.appendChild(code);if(t.lang){const langTag=document.createElement('span');langTag.className='code-lang';langTag.textContent=t.lang;pre.appendChild(langTag);}container.appendChild(pre);}else if(t.type==='line'){const div=document.createElement('div');div.className='msg-line';div.innerHTML=highlightXml(inlineMarkdown(t.content));container.appendChild(div);} });return container;}
+  function parseMarkdownToTokens(text){const lines=text.replace(/\r/g,'').split('\n');const tokens=[];let inCode=false;let codeLang='';let codeAccum=[];for(let i=0;i<lines.length;i++){const line=lines[i];const fence=line.match(/^```(.*)$/);if(fence){if(!inCode){inCode=true;codeLang=fence[1].trim();codeAccum=[];}else{tokens.push({type:'code',lang:codeLang,content:codeAccum.join('\n')});inCode=false;codeLang='';codeAccum=[];}continue;}if(inCode){codeAccum.push(line);continue;}tokens.push({type:'line',content:line});}if(inCode){tokens.push({type:'code',lang:codeLang,content:codeAccum.join('\n')});}return tokens;}
+  function inlineMarkdown(s){if(!s)return'';let out=escapeHtml(s);out=out.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');out=out.replace(/\*(.+?)\*/g,'<em>$1</em>');out=out.replace(/`([^`]+)`/g,'<code>$1</code>');out=out.replace(/\[(.*?)\]\((https?:[^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');out=out.replace(/(?<!["'=])\b(https?:\/\/[^\s<]+[^<.,;!?)\s])/g,'<a href="$1" target="_blank" rel="noopener">$1</a>');return out;}
+  function highlightXml(html){return html.replace(/(&lt;\/?[A-Za-z0-9_:\-]+(?:\s+[^&]*?)?&gt;)/g,'<span class="xml-tag">$1</span>');}
+    function buildEditArea(stepObj,side){const eff=side==='input'?(stepObj.edited_input_messages||stepObj.input_messages||[]):(stepObj.edited_output_messages||stepObj.output_messages||[]);const original=side==='input'?(stepObj.input_messages||[]):(stepObj.output_messages||[]);const box=document.createElement('div');box.className='edit-box';const tb=document.createElement('div');tb.className='editor-toolbar';const save=document.createElement('button');save.textContent=t('save');save.className='primary';const formatBtn=document.createElement('button');formatBtn.textContent=t('format');const expandBtn=document.createElement('button');expandBtn.textContent=t('fullscreen');const reset=document.createElement('button');reset.textContent=t('reset');const cancel=document.createElement('button');cancel.textContent=t('back');const diffBtn=document.createElement('button');diffBtn.textContent=t('diff');diffBtn.className='toggle-diff';const statusSpan=document.createElement('span');statusSpan.className='editor-status';statusSpan.textContent='';const info=document.createElement('div');info.className='info';const countSpan=document.createElement('span');const lineSpan=document.createElement('span');info.append(countSpan,lineSpan,statusSpan);tb.append(save,formatBtn,expandBtn,reset,cancel,diffBtn,info);box.appendChild(tb);const ta=document.createElement('textarea');ta.className='editor-textarea';ta.value=JSON.stringify(eff,null,2);box.appendChild(ta);const diffPre=document.createElement('pre');diffPre.className='diff-original';diffPre.style.display='none';diffPre.textContent=JSON.stringify(original,null,2);box.appendChild(diffPre);const footer=document.createElement('div');footer.className='editor-footer';footer.innerHTML=`<span>${t('editingArray')}</span><span>${t('escHint')}</span>`;box.appendChild(footer);function updateCounts(){let arr;try{arr=JSON.parse(ta.value);}catch{arr=null;}countSpan.textContent=(arr&&Array.isArray(arr)?arr.length:0)+' items';lineSpan.textContent='L:'+ta.value.split('\n').length;}function validate(){let ok=false,msg='';try{const parsed=JSON.parse(ta.value);if(!Array.isArray(parsed))throw new Error(t('invalidRootArray'));ok=true;msg=t('validJson');statusSpan.className='editor-status ok';}catch(e){msg=e.message;statusSpan.className='editor-status err';}statusSpan.textContent=msg;ta.classList.toggle('invalid',!ok);return ok;}function format(){try{const parsed=JSON.parse(ta.value);ta.value=JSON.stringify(parsed,null,2);updateCounts();validate();}catch(e){statusSpan.textContent='ERR: '+e.message;statusSpan.className='editor-status err';}}let expanded=false;function toggleExpand(){expanded=!expanded;expandBtn.textContent=expanded?t('restore'):t('fullscreen');if(expanded){box.style.position='fixed';box.style.top='60px';box.style.left='40px';box.style.right='40px';box.style.bottom='40px';box.style.zIndex=9999;box.style.padding='4px';ta.style.minHeight='calc(100vh - 200px)';document.body.style.overflow='hidden';}else{box.removeAttribute('style');ta.style.minHeight='360px';document.body.style.overflow='';box.className='edit-box';}}let showingDiff=false;function toggleDiff(){showingDiff=!showingDiff;diffPre.style.display=showingDiff?'block':'none';diffBtn.textContent=showingDiff?t('hideDiff'):t('diff');}ta.addEventListener('input',()=>{updateCounts();validate();});save.onclick=()=>{if(!validate())return;try{const parsed=JSON.parse(ta.value);if(side==='input')stepObj.edited_input_messages=parsed;else stepObj.edited_output_messages=parsed;render();}catch(e){statusSpan.textContent='ERR: '+e.message;statusSpan.className='editor-status err';}};formatBtn.onclick=()=>format();expandBtn.onclick=()=>toggleExpand();reset.onclick=()=>{if(side==='input')delete stepObj.edited_input_messages;else delete stepObj.edited_output_messages;ta.value=JSON.stringify(original,null,2);updateCounts();validate();};cancel.onclick=()=>{if(side==='input')inputMode.value='rich';else outputMode.value='rich';render();};diffBtn.onclick=()=>toggleDiff();document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(expanded){toggleExpand();}else{cancel.click();}} if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='s'){e.preventDefault();save.click();}});updateCounts();validate();return box;}
+    function deriveContent(msg){if(typeof msg.content==='string')return msg.content;if(Array.isArray(msg.content))return msg.content.map(c=>typeof c==='string'?c:JSON.stringify(c)).join('\n');if(msg.text)return msg.text; if(msg.message)return typeof msg.message==='string'?msg.message:JSON.stringify(msg.message);return JSON.stringify(msg,null,2);}
+  function renderDetails(stepObj){const tools=(stepObj.edited_tools||stepObj.tools||[]);const inference=stepObj.inference_args||{};const meta=stepObj.meta||{};const summary=[];if(tools.length)summary.push(t('tools')+' '+tools.length);const iaK=Object.keys(inference);if(iaK.length)summary.push('Args '+iaK.length);const metaK=Object.keys(meta);if(metaK.length)summary.push('Meta '+metaK.length);detailSummary.textContent=summary.join(' • ');detailsEl.innerHTML='';const wrap=document.createElement('div');wrap.className='detail-panels';wrap.appendChild(buildEditableCard(t('tools'),tools,stepObj,'tools',{editable:true,defaultOpen:true}));wrap.appendChild(buildCard(t('inferenceArgs'),inference,{search:true}));wrap.appendChild(buildCard(t('meta'),meta));wrap.appendChild(buildCard(t('originalStep'),stepObj));detailsEl.appendChild(wrap);}
+    function buildCard(title,data,opts={}){const {collapsed=false,search=false}=opts;const card=document.createElement('div');card.className='detail-card'+(collapsed?' collapsed':'');const header=document.createElement('div');header.className='detail-card-header';header.innerHTML=`<span class="arrow">▶</span><span class="title">${escapeHtml(title)}</span><span class="count">${Array.isArray(data)?data.length:Object.keys(data||{}).length}</span>`;const btnWrap=document.createElement('button');btnWrap.className='wrap-btn';const wrapKey=(state.currentFile||'')+'|'+state.currentIndex+'|'+title;const init=wrapKey in state.wrapStates?state.wrapStates[wrapKey]:true;state.wrapStates[wrapKey]=init;function syncWrap(){card.classList.toggle('wrap-on',state.wrapStates[wrapKey]);card.classList.toggle('wrap-off',!state.wrapStates[wrapKey]);btnWrap.textContent=state.wrapStates[wrapKey]?t('wrapOn'):t('wrapOff');btnWrap.classList.toggle('active',state.wrapStates[wrapKey]);}btnWrap.onclick=(e)=>{e.stopPropagation();state.wrapStates[wrapKey]=!state.wrapStates[wrapKey];syncWrap();};header.appendChild(btnWrap);const btnCopy=document.createElement('button');btnCopy.textContent=t('copy');header.appendChild(btnCopy);if(search){const sWrap=document.createElement('div');sWrap.className='detail-search';const inp=document.createElement('input');inp.placeholder=t('searchPlaceholder');const count=document.createElement('span');count.textContent='0';sWrap.append(inp,count);header.appendChild(sWrap);inp.addEventListener('input',()=>{const q=inp.value.trim();let c=0;[...body.querySelectorAll('.json-mini-line')].forEach(line=>{if(!q){line.classList.remove('mark');return;}if(line.textContent.toLowerCase().includes(q.toLowerCase())){line.classList.add('mark');c++;}else line.classList.remove('mark');});count.textContent=c;});}
+      header.addEventListener('click',e=>{if(e.target!==btnCopy && e.target.tagName!=='INPUT' && e.target!==btnWrap){card.classList.toggle('collapsed');}});
+      const body=document.createElement('div');body.className='detail-card-body';if(!data|| (Array.isArray(data)&&!data.length) || (typeof data==='object'&&!Array.isArray(data)&&!Object.keys(data||{}).length)){const empty=document.createElement('div');empty.className='empty-hint';empty.textContent=t('empty');body.appendChild(empty);} else {const container=document.createElement('div');container.className='json-mini-container';container.appendChild(buildMiniJson(data));body.appendChild(container);}btnCopy.onclick=e=>{e.stopPropagation();navigator.clipboard.writeText(JSON.stringify(data,null,2));btnCopy.textContent=t('copied');setTimeout(()=>btnCopy.textContent=t('copy'),1200);};card.append(header,body);syncWrap();return card;}
+    function buildEditableCard(title,data,stepObj,key,opts={}){const edited=!!stepObj['edited_'+key];const card=buildCard(title,data,opts);if(edited)card.classList.add('edited');const header=card.querySelector('.detail-card-header');if(edited){const badge=document.createElement('span');badge.className='badge';badge.textContent=t('edited');header.insertBefore(badge,header.querySelector('.count'));}const editBtn=document.createElement('button');editBtn.textContent=t('edit');header.insertBefore(editBtn,header.querySelector('button'));const body=card.querySelector('.detail-card-body');editBtn.onclick=e=>{e.stopPropagation();if(body.querySelector('textarea'))return;body.innerHTML='';const toolbar=document.createElement('div');toolbar.className='detail-toolbar';const save=document.createElement('button');save.textContent=t('save');save.className='primary';const fmt=document.createElement('button');fmt.textContent=t('format');const cancel=document.createElement('button');cancel.textContent=t('back');toolbar.append(save,fmt,cancel);const ta=document.createElement('textarea');ta.style.width='100%';ta.style.minHeight='240px';ta.style.fontFamily='ui-monospace,monospace';ta.style.fontSize='.68rem';ta.style.background='#0f1215';ta.style.color='#d7e2ec';ta.value=JSON.stringify(stepObj['edited_'+key]||data,null,2);body.append(toolbar,ta);const status=document.createElement('div');status.style.fontSize='.55rem';status.style.color='var(--muted)';status.textContent=t('edit')+' '+title;body.appendChild(status);function validate(){try{const parsed=JSON.parse(ta.value);status.textContent=t('validJson')+' ('+(Array.isArray(parsed)?parsed.length+' items':Object.keys(parsed||{}).length+' keys')+')';status.style.color='#6fdd9b';ta.classList.remove('invalid');return true;}catch(err){status.textContent='ERR: '+err.message;status.style.color='#ff8b7b';ta.classList.add('invalid');return false;}}ta.addEventListener('input',validate);validate();fmt.onclick=()=>{try{const parsed=JSON.parse(ta.value);ta.value=JSON.stringify(parsed,null,2);validate();}catch(err){status.textContent='ERR: '+err.message;status.style.color='#ff8b7b';}};cancel.onclick=()=>{renderDetails(stepObj);};save.onclick=()=>{if(!validate())return;try{const parsed=JSON.parse(ta.value);stepObj['edited_'+key]=parsed;renderDetails(stepObj);}catch(err){status.textContent='ERR: '+err.message;status.style.color='#ff8b7b';}};};return card;}
+  function buildMiniJson(data){const wrap=document.createElement('div');const jsonStr=JSON.stringify(data,null,2);const lines=jsonStr.split('\n');lines.forEach((ln,i)=>{const line=document.createElement('div');line.className='json-mini-line';const escaped=escapeHtml(ln);const indentReplaced=escaped.replace(/^ +/,m=>m.replace(/ /g,'&nbsp;'));const highlighted=syntaxHighlight(indentReplaced);line.innerHTML='<span class="json-mini-ln">'+(i+1)+'</span>'+highlighted;wrap.appendChild(line);});return wrap;}
+    function escapeHtml(str){return String(str).replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s]));}
+    function syntaxHighlight(json){if(!json)return'';return json.replace(/(&quot;.*?&quot;:?|".*?":?|\b(true|false|null)\b|-?\d+(?:\.\d+)?)/g,m=>{let c='json-number';if(/^"/.test(m))c=/:$/.test(m)?'json-key':'json-string';else if(/true|false/.test(m))c='json-boolean';else if(/null/.test(m))c='json-null';return'<code class='+c+'>'+m+'</code>';});}
+    firstStep.onclick=()=>{state.currentIndex=0;render();};prevStep.onclick=()=>{state.currentIndex--;render();};nextStep.onclick=()=>{state.currentIndex++;render();};lastStep.onclick=()=>{const {steps}=state.files.get(state.currentFile);state.currentIndex=steps.length-1;render();};jumpStep.addEventListener('change',()=>{const v=parseInt(jumpStep.value,10)-1;if(!isNaN(v)){state.currentIndex=v;render();}});
+  inputMode.onchange=()=>render();outputMode.onchange=()=>render();
+    exportCurrent.onclick=()=>{if(!state.currentFile)return;const {steps}=state.files.get(state.currentFile);const stepObj=steps[state.currentIndex];const exp=buildExportStep(stepObj);const blob=new Blob([JSON.stringify(exp,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${state.currentFile.replace(/\.[^.]+$/, '')}_step_${state.currentIndex+1}.json`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(a.href);};
+    exportTrajectory.onclick=()=>{if(!state.currentFile)return;const {steps}=state.files.get(state.currentFile);const lines=steps.map(s=>JSON.stringify(buildExportStep(s))).join('\n');const blob=new Blob([lines+'\n'],{type:'application/jsonl'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=state.currentFile.replace(/\.[^.]+$/, '')+'_edited.jsonl';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(a.href);};
+    function buildExportStep(s){const base={...s};if(s.edited_input_messages)base.edited_input_messages=s.edited_input_messages; if(s.edited_output_messages)base.edited_output_messages=s.edited_output_messages; if(s.edited_tools)base.edited_tools=s.edited_tools; return base;}
+  collapseBar.addEventListener('click',()=>{const c=detailsEl.style.display==='none';detailsEl.style.display=c?'block':'none';collapseBar.classList.toggle('collapsed',!c);});detailsEl.style.display='none';collapseBar.classList.add('collapsed');
+  // Drag & drop on unified fileArea
+  ;['dragenter','dragover'].forEach(ev=>fileArea.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();fileArea.classList.add('dragover');}));
+  ;['dragleave','drop'].forEach(ev=>fileArea.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();if(e.type==='drop'){const files=e.dataTransfer.files;if(files&&files.length){fileInput.files=files;enterCompact();loadSelectedFiles();}}fileArea.classList.remove('dragover');}));
+    function parseJSONL(text){const lines=text.split(/\r?\n/).filter(l=>l.trim().length);const steps=[];for(let i=0;i<lines.length;i++){const line=lines[i];try{const obj=JSON.parse(line);const inference=obj.inference_args||obj.inferenceArgs||{};let tools=obj.tools||[];if((!tools||!tools.length)&&inference&&Array.isArray(inference.tools)&&inference.tools.length)tools=inference.tools;const stepObj={url:obj.url||'',input_messages:obj.input_messages||obj.inputMessages||[],output_messages:obj.output_messages||obj.outputMessages||[],inference_args:inference,tools:tools||[],is_answer:obj.is_answer||obj.isAnswer||false,turn:obj.turn??0,step:obj.step??i,meta:obj.meta||{}};if(obj.edited_input_messages)stepObj.edited_input_messages=obj.edited_input_messages;if(obj.edited_output_messages)stepObj.edited_output_messages=obj.edited_output_messages;if(obj.edited_tools)stepObj.edited_tools=obj.edited_tools;steps.push(stepObj);}catch(e){console.warn('跳过无效 JSON 行',i+1,e);} }return {steps,rawLines:lines};}
   </script>
 </body>
 </html>
-  
