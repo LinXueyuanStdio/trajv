@@ -8,7 +8,7 @@
 
 ⭐ 如果这个项目对您有帮助，请给它一个星星！
 
-![](./screenshot.png)
+![](./screenshot2.png)
 
 ## 📖 项目简介
 
