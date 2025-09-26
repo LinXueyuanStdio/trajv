@@ -197,6 +197,23 @@
   .github-link{display:inline-flex;align-items:center;justify-content:center;color:var(--muted);text-decoration:none;margin-left:.6rem;position:relative;}
   .github-link svg{width:20px;height:20px;fill:currentColor;display:block;transition:color .2s ease,transform .2s ease;}
   .github-link:hover{color:var(--accent);transform:scale(1.08);} .github-link:active{transform:scale(.95);} .github-link:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px;}
+  /* --- Image zoom button & preview overlay (mac style) --- */
+  .img-zoom-wrap{position:relative;display:inline-block;}
+  .img-zoom-wrap img{display:block;}
+  .img-zoom-btn{position:absolute;top:6px;right:6px;background:#30363d;border:1px solid #3d444c;color:#cdd3d8;font-size:.6rem;padding:.18rem .4rem;border-radius:4px;cursor:pointer;line-height:1;opacity:.95}
+  .img-zoom-btn:hover{background:var(--accent-hover);border-color:var(--accent-hover);color:#fff}
+  .img-preview-overlay{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:10000;backdrop-filter:blur(1.5px);}
+  .img-preview-overlay.show{display:flex;}
+  .img-preview-window{background:var(--panel);border:1px solid var(--border);border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 0 1px #0006;display:flex;flex-direction:column;width:min(96vw,1200px);max-height:96vh;overflow:hidden;}
+  .mac-titlebar{height:32px;background:linear-gradient(180deg,#2b2f34,#25292e);border-bottom:1px solid #0006;display:flex;align-items:center;gap:.5rem;}
+  .mac-traffic-lights{display:flex;gap:8px;margin-left:10px;}
+  .mac-dot{width:12px;height:12px;border-radius:50%;display:inline-block;box-shadow:inset 0 0 0 1px #0005,0 1px 0 #0006;}
+  .mac-dot.red{background:#ff5f57;cursor:pointer;}
+  .mac-dot.yellow{background:#ffbd2e;opacity:.75}
+  .mac-dot.green{background:#28c840;opacity:.75}
+  .mac-title{font-size:.72rem;color:#cdd3d8;letter-spacing:.2px;}
+  .img-preview-body{background:#0f1215;display:flex;align-items:center;justify-content:center;padding:.5rem;}
+  .img-preview-body img{max-width:95vw;max-height:calc(95vh - 48px);object-fit:contain;background:#000;border-radius:6px;}
   </style>
 </head>
 <body>
@@ -287,14 +304,18 @@
     function exitCompact(){fileArea.classList.remove('compact'); if(fileHint) fileHint.style.display='';}
 
     const I18N={
-  zh:{title:'Trajectory 浏览器',load:'载入',selectFolder:'选择文件夹',selectFiles:'选择文件',hint:'拖拽 JSONL 文件到此处 或 点击按钮选择',skipInfo:'已读取: {loaded} 个，跳过非 JSONL: {skipped} 个',notLoaded:'未加载文件',dragDrop:'拖拽 JSONL 文件到此处 或 使用上方文件选择',step:'Step',highlight:'高亮答案',unhighlight:'取消高亮',exportCurrent:'导出当前 Step',exportTrajectory:'导出轨迹',detailsHeader:'步骤详情 (tools / inference_args / meta)',inputMessages:'Input Messages',outputMessages:'Output Messages',mode:{rich:'美化视图',json:'JSON',edit:'编辑'},copy:'复制',copied:'已复制',fold:'折叠',expandStructure:'展开结构',expandAll:'展开',collapseAll:'全部折叠',searchPlaceholder:'搜索...',wrapOn:'自适应换行',wrapOff:'横向滚动',edit:'编辑',edited:'已编辑',empty:'(空)',tools:'Tools',inferenceArgs:'Inference Args',meta:'Meta',originalStep:'原始 Step JSON',save:'保存',format:'格式化',fullscreen:'全屏',restore:'还原',reset:'恢复原始',back:'返回',diff:'对比',hideDiff:'隐藏对比',validJson:'有效 JSON',invalidRootArray:'根必须是数组',editingArray:'编辑 JSON 数组: message 列表',escHint:'ESC 取消 / Ctrl+S 保存',parseFailed:'解析失败: ',loadingParsing:'解析文件...'},
-  en:{title:'Trajectory Browser',load:'Load',selectFolder:'Select Folder',selectFiles:'Select Files',hint:'Drag JSONL files here or click buttons',skipInfo:'Loaded: {loaded}, skipped non-JSONL: {skipped}',notLoaded:'No file loaded',dragDrop:'Drag JSONL files here or use selectors above',step:'Step',highlight:'Highlight Answer',unhighlight:'Unhighlight',exportCurrent:'Export Current Step',exportTrajectory:'Export Trajectory',detailsHeader:'Step Details (tools / inference_args / meta)',inputMessages:'Input Messages',outputMessages:'Output Messages',mode:{rich:'Rich View',json:'JSON',edit:'Edit'},copy:'Copy',copied:'Copied',fold:'Fold',expandStructure:'Expand Structure',expandAll:'Expand',collapseAll:'Collapse All',searchPlaceholder:'Search...',wrapOn:'Wrap',wrapOff:'Horizontal',edit:'Edit',edited:'Edited',empty:'(empty)',tools:'Tools',inferenceArgs:'Inference Args',meta:'Meta',originalStep:'Raw Step JSON',save:'Save',format:'Format',fullscreen:'Fullscreen',restore:'Restore',reset:'Reset',back:'Back',diff:'Diff',hideDiff:'Hide Diff',validJson:'Valid JSON',invalidRootArray:'Root must be an array',editingArray:'Edit JSON array: messages list',escHint:'ESC Cancel / Ctrl+S Save',parseFailed:'Parse failed: ',loadingParsing:'Parsing files...'}
-    };
-    function t(k){const lang=I18N[state.lang]||I18N.zh;return k.split('.').reduce((o,p)=>o&&o[p],lang)||k;}
+  zh:{title:'Trajectory 浏览器',load:'载入',selectFolder:'选择文件夹',selectFiles:'选择文件',hint:'拖拽 JSONL 文件到此处 或 点击按钮选择',skipInfo:'已读取: {loaded} 个，跳过非 JSONL: {skipped} 个',notLoaded:'未加载文件',dragDrop:'拖拽 JSONL 文件到此处 或 使用上方文件选择',step:'Step',highlight:'高亮答案',unhighlight:'取消高亮',exportCurrent:'导出当前 Step',exportTrajectory:'导出轨迹',detailsHeader:'步骤详情 (tools / inference_args / meta)',inputMessages:'Input Messages',outputMessages:'Output Messages',mode:{rich:'美化视图',json:'JSON',edit:'编辑'},copy:'复制',copied:'已复制',fold:'折叠',expandStructure:'展开结构',expandAll:'展开',collapseAll:'全部折叠',searchPlaceholder:'搜索...',wrapOn:'自适应换行',wrapOff:'横向滚动',edit:'编辑',edited:'已编辑',empty:'(空)',tools:'Tools',inferenceArgs:'Inference Args',meta:'Meta',originalStep:'原始 Step JSON',save:'保存',format:'格式化',fullscreen:'全屏',restore:'还原',reset:'恢复原始',back:'返回',diff:'对比',hideDiff:'隐藏对比',validJson:'有效 JSON',invalidRootArray:'根必须是数组',editingArray:'编辑 JSON 数组: message 列表',escHint:'ESC 取消 / Ctrl+S 保存',parseFailed:'解析失败: ',loadingParsing:'解析文件...',zoom:'放大',previewTitle:'图片预览',close:'关闭'},
+  en:{title:'Trajectory Browser',load:'Load',selectFolder:'Select Folder',selectFiles:'Select Files',hint:'Drag JSONL files here or click buttons',skipInfo:'Loaded: {loaded}, skipped non-JSONL: {skipped}',notLoaded:'No file loaded',dragDrop:'Drag JSONL files here or use selectors above',step:'Step',highlight:'Highlight Answer',unhighlight:'Unhighlight',exportCurrent:'Export Current Step',exportTrajectory:'Export Trajectory',detailsHeader:'Step Details (tools / inference_args / meta)',inputMessages:'Input Messages',outputMessages:'Output Messages',mode:{rich:'Rich View',json:'JSON',edit:'Edit'},copy:'Copy',copied:'Copied',fold:'Fold',expandStructure:'Expand Structure',expandAll:'Expand',collapseAll:'Collapse All',searchPlaceholder:'Search...',wrapOn:'Wrap',wrapOff:'Horizontal',edit:'Edit',edited:'Edited',empty:'(empty)',tools:'Tools',inferenceArgs:'Inference Args',meta:'Meta',originalStep:'Raw Step JSON',save:'Save',format:'Format',fullscreen:'Fullscreen',restore:'Restore',reset:'Reset',back:'Back',diff:'Diff',hideDiff:'Hide Diff',validJson:'Valid JSON',invalidRootArray:'Root must be an array',editingArray:'Edit JSON array: messages list',escHint:'ESC Cancel / Ctrl+S Save',parseFailed:'Parse failed: ',loadingParsing:'Parsing files...',zoom:'Zoom',previewTitle:'Image Preview',close:'Close'}
+  };
+  // i18n additions for image preview (non-breaking augment)
+  if(!I18N.zh.zoom){ try{ Object.assign(I18N.zh, { zoom:'放大', previewTitle:'图片预览', close:'关闭' }); }catch(e){} }
+  if(!I18N.en.zoom){ try{ Object.assign(I18N.en, { zoom:'Zoom', previewTitle:'Image Preview', close:'Close' }); }catch(e){} }
+  function t(k){const lang=I18N[state.lang]||I18N.zh;return k.split('.').reduce((o,p)=>o&&o[p],lang)||k;}
   function applyLangStatic(){titleText.textContent=t('title');folderBtn.textContent=t('selectFolder');selectFilesBtn.textContent=t('selectFiles');fileHint.textContent=t('hint');if(!state.files.size){statusEl.textContent=t('notLoaded');statusEl.style.display='';}stepLabel.textContent=t('step');detailHeader.textContent=t('detailsHeader');inputPanelTitle.textContent=t('inputMessages');outputPanelTitle.textContent=t('outputMessages');
     // update mode buttons text
     document.querySelectorAll('.mode-buttons button').forEach(btn=>{const key=btn.getAttribute('data-i18n');if(key)btn.textContent=t(key);});
-    exportCurrent.textContent=t('exportCurrent');exportTrajectory.textContent=t('exportTrajectory');}
+  exportCurrent.textContent=t('exportCurrent');exportTrajectory.textContent=t('exportTrajectory');
+  const ttl=document.querySelector('#imgPreviewOverlay .mac-title'); if(ttl) ttl.textContent=t('previewTitle');}
     langSelect.value=state.lang;langSelect.addEventListener('change',()=>{state.lang=langSelect.value;applyLangStatic();render();});
     document.addEventListener('DOMContentLoaded',()=>el('buildTime').textContent=new Date().toLocaleString());
     function setStatus(msg,ok=true){statusEl.textContent=msg;statusEl.style.color=ok?'var(--muted)':'var(--danger)';}
@@ -378,7 +399,15 @@
   /* (Removed old createMessageEl version to avoid duplication) */
   function createMessageEl(msg,idx,kind,isAnswer,editedFlag=false){const div=document.createElement('div');const role=(msg.role||msg.sender||(kind==='input'?'user':'assistant'));const collapsedDefault=role==='system';div.className='message'+(collapsedDefault?' collapsed':'');const metaItems=[];if(msg.name)metaItems.push('name='+msg.name);if(msg.type)metaItems.push(msg.type);const callId=msg.tool_call_id||msg.call_id; if(callId) metaItems.push('call_id='+callId);if(Array.isArray(msg.tool_calls)&&msg.tool_calls.length)metaItems.push('tool_calls='+msg.tool_calls.length);const metaLine=metaItems.join(' • ');const header=document.createElement('div');header.className='msg-header';header.innerHTML=`<span class="arrow">▶</span><span class="msg-role">${escapeHtml(role)}</span><span>#${idx+1}</span>${metaLine?'<span>'+escapeHtml(metaLine)+'</span>':''}${editedFlag?`<span class="edited-badge">${t('edited')}</span>`:''}`;header.addEventListener('click',()=>{div.classList.toggle('collapsed');});div.appendChild(header);const body=document.createElement('div');body.className='msg-body';if(Array.isArray(msg.content) && msg.content.some(p=>p&&typeof p==='object'&&p.type)){body.appendChild(renderTypedParts(msg.content));} else {const contentText=deriveContent(msg);body.appendChild(renderRichContent(contentText));}
     if(Array.isArray(msg.tool_calls)&&msg.tool_calls.length){body.appendChild(renderToolCalls(msg.tool_calls));}
-    if(!(Array.isArray(msg.content)&&msg.content.some(p=>p&&typeof p==='object'&&p.type==='image'))){const images=collectImages(msg);if(images.length){const imgWrap=document.createElement('div');imgWrap.className='mm-images';images.forEach(src=>{const im=document.createElement('img');im.src=src;imgWrap.appendChild(im);});body.appendChild(imgWrap);}}
+  // Only render bottom image gallery when content doesn't already include images
+  if(!(Array.isArray(msg.content)&&msg.content.some(p=>p&&typeof p==='object'&&(p.type==='image'||p.type==='image_url')))){
+    const images=collectImages(msg);
+    if(images.length){
+      const imgWrap=document.createElement('div');imgWrap.className='mm-images';
+      images.forEach(src=>{imgWrap.appendChild(buildImageWithZoom(src));});
+      body.appendChild(imgWrap);
+    }
+  }
     div.appendChild(body);return div;}
   function renderToolCalls(calls){const wrap=document.createElement('div');wrap.className='tool-calls';calls.forEach(call=>{const tc=document.createElement('div');tc.className='tool-call';const fn=call.function||{};const name=fn.name||call.name||'unknown';const id=call.id||'';const type=call.type||fn.type||'function';const header=document.createElement('div');header.className='tool-call-header';header.innerHTML=`<span class="tc-name">${escapeHtml(name)}</span>${id?`<span class="tc-id">(${escapeHtml(id)})</span>`:''}<span class="tc-type">${escapeHtml(type)}</span>`;tc.appendChild(header);let argText=fn.arguments||call.arguments||'';let parsed=null;let parseOk=false;if(typeof argText==='string'){try{parsed=JSON.parse(argText);parseOk=true;}catch{parseOk=false;}}
     else if(argText&&typeof argText==='object'){parsed=argText;parseOk=true;}
@@ -397,7 +426,7 @@
     return pre;}
   // After hljs loads, process batched line highlighting
   const observerHL=setInterval(()=>{if(window.hljs&&window.hljs.highlight){const pendingLineObjs=_hlPending.filter(o=>o.__batchLines);_hlPending.splice(0,_hlPending.length);pendingLineObjs.forEach(obj=>{[...obj.linesRef.querySelectorAll('.ln-code')].forEach(codeNode=>{const tmp=document.createElement('code');tmp.className='language-'+obj.lang;tmp.textContent=codeNode.textContent;window.hljs.highlightElement(tmp);codeNode.innerHTML=tmp.innerHTML;});});} },300);
-  function renderTypedParts(parts){const wrap=document.createElement('div');wrap.className='msg-lines';parts.forEach(part=>{if(!part||typeof part!=='object')return;const line=document.createElement('div');line.className='part-line';const tag=document.createElement('span');tag.className='part-tag';tag.textContent=(part.type||'data').toUpperCase();line.appendChild(tag);if(part.type==='image'||part.type==='image_url'){let src=null;if(part.data)src=part.data.startsWith('data:')?part.data:'data:image/png;base64,'+part.data;else if(part.image_url)src=typeof part.image_url==='string'?part.image_url:part.image_url.url;else if(part.url)src=part.url;if(src){const im=document.createElement('img');im.src=src;line.appendChild(im);} } else {const txtHolder=document.createElement('span');txtHolder.className='part-text';const raw=part.text||part.content||part.value||JSON.stringify(part);const str=typeof raw==='string'?raw:JSON.stringify(raw);txtHolder.innerHTML=highlightXml(inlineMarkdown(str));line.appendChild(txtHolder);}wrap.appendChild(line);});return wrap;}
+  function renderTypedParts(parts){const wrap=document.createElement('div');wrap.className='msg-lines';parts.forEach(part=>{if(!part||typeof part!=='object')return;const line=document.createElement('div');line.className='part-line';const tag=document.createElement('span');tag.className='part-tag';tag.textContent=(part.type||'data').toUpperCase();line.appendChild(tag);if(part.type==='image'||part.type==='image_url'){let src=null;if(part.data)src=part.data.startsWith('data:')?part.data:'data:image/png;base64,'+part.data;else if(part.image_url)src=typeof part.image_url==='string'?part.image_url:part.image_url.url;else if(part.url)src=part.url;if(src){line.appendChild(buildImageWithZoom(src));} } else {const txtHolder=document.createElement('span');txtHolder.className='part-text';const raw=part.text||part.content||part.value||JSON.stringify(part);const str=typeof raw==='string'?raw:JSON.stringify(raw);txtHolder.innerHTML=highlightXml(inlineMarkdown(str));line.appendChild(txtHolder);}wrap.appendChild(line);});return wrap;}
   function collectImages(msg){const arr=[];const pushIf=(src)=>{if(src)arr.push(src);};if(msg.image)pushIf(msg.image);if(msg.image_url)pushIf(typeof msg.image_url==='string'?msg.image_url:msg.image_url.url);if(Array.isArray(msg.images))msg.images.forEach(pushIf);if(Array.isArray(msg.content))msg.content.forEach(part=>{if(!part||typeof part!=='object')return;try{if(part.type==='image_url'&&part.image_url)pushIf(typeof part.image_url==='string'?part.image_url:part.image_url.url);else if(part.type==='image'&&part.data)pushIf(part.data.startsWith('data:')?part.data:'data:image/png;base64,'+part.data);}catch{}});return arr;}
   function renderRichContent(text){const wrap=document.createElement('div');wrap.className='msg-content';wrap.appendChild(buildMarkdownLines(text));return wrap;}
   function buildMarkdownLines(text){const container=document.createElement('div');container.className='msg-lines';if(!text){return container;}const tokens=parseMarkdownToTokens(text);tokens.forEach(t=>{if(t.type==='code'){const pre=document.createElement('pre');pre.className='code-block';const code=document.createElement('code');code.textContent=t.content;pre.appendChild(code);if(t.lang){const langTag=document.createElement('span');langTag.className='code-lang';langTag.textContent=t.lang;pre.appendChild(langTag);}container.appendChild(pre);}else if(t.type==='line'){const div=document.createElement('div');div.className='msg-line';div.innerHTML=highlightXml(inlineMarkdown(t.content));container.appendChild(div);} });return container;}
@@ -412,6 +441,52 @@
       const body=document.createElement('div');body.className='detail-card-body';if(!data|| (Array.isArray(data)&&!data.length) || (typeof data==='object'&&!Array.isArray(data)&&!Object.keys(data||{}).length)){const empty=document.createElement('div');empty.className='empty-hint';empty.textContent=t('empty');body.appendChild(empty);} else {const container=document.createElement('div');container.className='json-mini-container';container.appendChild(buildMiniJson(data));body.appendChild(container);}btnCopy.onclick=e=>{e.stopPropagation();navigator.clipboard.writeText(JSON.stringify(data,null,2));btnCopy.textContent=t('copied');setTimeout(()=>btnCopy.textContent=t('copy'),1200);};card.append(header,body);syncWrap();return card;}
     function buildEditableCard(title,data,stepObj,key,opts={}){const edited=!!stepObj['edited_'+key];const card=buildCard(title,data,opts);if(edited)card.classList.add('edited');const header=card.querySelector('.detail-card-header');if(edited){const badge=document.createElement('span');badge.className='badge';badge.textContent=t('edited');header.insertBefore(badge,header.querySelector('.count'));}const editBtn=document.createElement('button');editBtn.textContent=t('edit');header.insertBefore(editBtn,header.querySelector('button'));const body=card.querySelector('.detail-card-body');editBtn.onclick=e=>{e.stopPropagation();if(body.querySelector('textarea'))return;body.innerHTML='';const toolbar=document.createElement('div');toolbar.className='detail-toolbar';const save=document.createElement('button');save.textContent=t('save');save.className='primary';const fmt=document.createElement('button');fmt.textContent=t('format');const cancel=document.createElement('button');cancel.textContent=t('back');toolbar.append(save,fmt,cancel);const ta=document.createElement('textarea');ta.style.width='100%';ta.style.minHeight='240px';ta.style.fontFamily='ui-monospace,monospace';ta.style.fontSize='.68rem';ta.style.background='#0f1215';ta.style.color='#d7e2ec';ta.value=JSON.stringify(stepObj['edited_'+key]||data,null,2);body.append(toolbar,ta);const status=document.createElement('div');status.style.fontSize='.55rem';status.style.color='var(--muted)';status.textContent=t('edit')+' '+title;body.appendChild(status);function validate(){try{const parsed=JSON.parse(ta.value);status.textContent=t('validJson')+' ('+(Array.isArray(parsed)?parsed.length+' items':Object.keys(parsed||{}).length+' keys')+')';status.style.color='#6fdd9b';ta.classList.remove('invalid');return true;}catch(err){status.textContent='ERR: '+err.message;status.style.color='#ff8b7b';ta.classList.add('invalid');return false;}}ta.addEventListener('input',validate);validate();fmt.onclick=()=>{try{const parsed=JSON.parse(ta.value);ta.value=JSON.stringify(parsed,null,2);validate();}catch(err){status.textContent='ERR: '+err.message;status.style.color='#ff8b7b';}};cancel.onclick=()=>{renderDetails(stepObj);};save.onclick=()=>{if(!validate())return;try{const parsed=JSON.parse(ta.value);stepObj['edited_'+key]=parsed;renderDetails(stepObj);}catch(err){status.textContent='ERR: '+err.message;status.style.color='#ff8b7b';}};};return card;}
   function buildMiniJson(data){const wrap=document.createElement('div');const jsonStr=JSON.stringify(data,null,2);const lines=jsonStr.split('\n');lines.forEach((ln,i)=>{const line=document.createElement('div');line.className='json-mini-line';const escaped=escapeHtml(ln);const indentReplaced=escaped.replace(/^ +/,m=>m.replace(/ /g,'&nbsp;'));const highlighted=syntaxHighlight(indentReplaced);line.innerHTML='<span class="json-mini-ln">'+(i+1)+'</span>'+highlighted;wrap.appendChild(line);});return wrap;}
+  // --- Image preview overlay helpers ---
+  let _imgOverlay=null,_imgOverlayImg=null;
+  function ensurePreviewOverlay(){
+    if(_imgOverlay) return _imgOverlay;
+    const overlay=document.createElement('div');
+    overlay.id='imgPreviewOverlay';
+    overlay.className='img-preview-overlay';
+    overlay.setAttribute('role','dialog');
+    overlay.addEventListener('click',()=>closeImagePreview());
+    const win=document.createElement('div');win.className='img-preview-window';
+    win.addEventListener('click',e=>e.stopPropagation());
+    const bar=document.createElement('div');bar.className='mac-titlebar';
+    const lights=document.createElement('div');lights.className='mac-traffic-lights';
+    const red=document.createElement('span');red.className='mac-dot red';red.title=t('close');red.addEventListener('click',()=>closeImagePreview());
+    const yellow=document.createElement('span');yellow.className='mac-dot yellow';
+    const green=document.createElement('span');green.className='mac-dot green';
+    lights.append(red,yellow,green);
+    const title=document.createElement('div');title.className='mac-title';title.textContent=t('previewTitle');
+    bar.append(lights,title);
+    const body=document.createElement('div');body.className='img-preview-body';
+    const img=document.createElement('img');body.appendChild(img);
+    win.append(bar,body);overlay.appendChild(win);document.body.appendChild(overlay);
+    _imgOverlay=overlay;_imgOverlayImg=img;
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&_imgOverlay.classList.contains('show')) closeImagePreview();});
+    return overlay;
+  }
+  function openImagePreview(src){
+    ensurePreviewOverlay();
+    _imgOverlayImg.src=src;
+    _imgOverlay.classList.add('show');
+    document.body.style.overflow='hidden';
+  }
+  function closeImagePreview(){
+    if(!_imgOverlay) return;
+    _imgOverlay.classList.remove('show');
+    _imgOverlayImg.src='';
+    document.body.style.overflow='';
+  }
+  function buildImageWithZoom(src){
+    const wrap=document.createElement('div');wrap.className='img-zoom-wrap';
+    const im=document.createElement('img');im.src=src;im.alt='image';
+    const btn=document.createElement('button');btn.type='button';btn.className='img-zoom-btn';btn.textContent=t('zoom');btn.title=t('zoom');
+    btn.addEventListener('click',(e)=>{e.stopPropagation();openImagePreview(src);});
+    wrap.append(im,btn);
+    return wrap;
+  }
   function escapeHtml(str){return String(str).replace(/[&<>\"]/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s]));}
     function syntaxHighlight(json){if(!json)return'';return json.replace(/(&quot;.*?&quot;:?|".*?":?|\b(true|false|null)\b|-?\d+(?:\.\d+)?)/g,m=>{let c='json-number';if(/^"/.test(m))c=/:$/.test(m)?'json-key':'json-string';else if(/true|false/.test(m))c='json-boolean';else if(/null/.test(m))c='json-null';return'<code class='+c+'>'+m+'</code>';});}
     firstStep.onclick=()=>{state.currentIndex=0;render();};prevStep.onclick=()=>{state.currentIndex--;render();};nextStep.onclick=()=>{state.currentIndex++;render();};lastStep.onclick=()=>{const {steps}=state.files.get(state.currentFile);state.currentIndex=steps.length-1;render();};jumpStep.addEventListener('change',()=>{const v=parseInt(jumpStep.value,10)-1;if(!isNaN(v)){state.currentIndex=v;render();}});
