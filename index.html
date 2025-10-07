@@ -322,10 +322,54 @@
   selectFilesBtn.addEventListener('click',()=>fileInput.click());
   fileInput.addEventListener('change',()=>{if(!fileInput.files.length)return;enterCompact();loadSelectedFiles();});
     function readFileAsText(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=e=>rej(e);r.readAsText(f);});}
-  async function loadSelectedFiles(){if(!fileInput.files.length)return;let hadError=false;for(const f of fileInput.files){try{const text=await readFileAsText(f);const {steps,rawLines}=parseJSONL(text);state.files.set(f.name,{steps,rawLines});}catch(e){console.error(e);hadError=true;setStatus(t('parseFailed')+f.name,false);} }refreshFileSelect();if(!hadError){statusEl.textContent='';statusEl.style.display='none';enterCompact();}fileInput.value='';}
+  async function loadSelectedFiles(){
+    if(!fileInput.files.length)return;
+    let hadError=false;
+    let latestKey=null; let latestMtime=-1;
+    for(const f of fileInput.files){
+      try{
+        const text=await readFileAsText(f);
+        const {steps,rawLines}=parseJSONL(text);
+        const mtime=typeof f.lastModified==='number'?f.lastModified:Date.now();
+        state.files.set(f.name,{steps,rawLines,mtime});
+        if(mtime>latestMtime){latestMtime=mtime;latestKey=f.name;}
+      }catch(e){
+        console.error(e);hadError=true;setStatus(t('parseFailed')+f.name,false);
+      }
+    }
+    if(latestKey) state.currentFile=latestKey;
+    refreshFileSelect();
+    if(!hadError){statusEl.textContent='';statusEl.style.display='none';enterCompact();}
+    fileInput.value='';
+  }
     folderBtn.addEventListener('click',()=>dirInput.click());
   dirInput.addEventListener('change',()=>{if(!dirInput.files.length)return;enterCompact();loadDirectoryFiles(dirInput.files);});
-  async function loadDirectoryFiles(fileList){let hadError=false;statusEl.style.display='';setStatus(t('loadingParsing'));let loaded=0,skipped=0;for(const f of fileList){if(!f.name.toLowerCase().endsWith('.jsonl')){skipped++;continue;}const display=f.webkitRelativePath||f.name;try{const text=await readFileAsText(f);const {steps,rawLines}=parseJSONL(text);state.files.set(display,{steps,rawLines});loaded++;}catch(e){console.error(e);hadError=true;setStatus(t('parseFailed')+display,false);} }refreshFileSelect();if(!hadError){if(loaded||skipped){const tpl=t('skipInfo').replace('{loaded}',loaded).replace('{skipped}',skipped);setStatus(tpl);}else{statusEl.textContent='';statusEl.style.display='none';}if(loaded) enterCompact();}dirInput.value='';}
+  async function loadDirectoryFiles(fileList){
+    let hadError=false;statusEl.style.display='';setStatus(t('loadingParsing'));
+    let loaded=0,skipped=0;
+    let latestKey=null; let latestMtime=-1;
+    for(const f of fileList){
+      if(!f.name.toLowerCase().endsWith('.jsonl')){skipped++;continue;}
+      const display=f.webkitRelativePath||f.name;
+      try{
+        const text=await readFileAsText(f);
+        const {steps,rawLines}=parseJSONL(text);
+        const mtime=typeof f.lastModified==='number'?f.lastModified:Date.now();
+        state.files.set(display,{steps,rawLines,mtime});
+        loaded++;
+        if(mtime>latestMtime){latestMtime=mtime;latestKey=display;}
+      }catch(e){
+        console.error(e);hadError=true;setStatus(t('parseFailed')+display,false);
+      }
+    }
+    if(latestKey) state.currentFile=latestKey;
+    refreshFileSelect();
+    if(!hadError){
+      if(loaded||skipped){const tpl=t('skipInfo').replace('{loaded}',loaded).replace('{skipped}',skipped);setStatus(tpl);}else{statusEl.textContent='';statusEl.style.display='none';}
+      if(loaded) enterCompact();
+    }
+    dirInput.value='';
+  }
   function refreshFileSelect(){trajectorySelect.innerHTML='';for(const name of state.files.keys()){const opt=document.createElement('option');opt.value=name;opt.textContent=name+' ('+state.files.get(name).steps.length+')';trajectorySelect.appendChild(opt);}trajectorySelect.disabled=!state.files.size;if(state.files.size){if(!state.currentFile||!state.files.has(state.currentFile))state.currentFile=trajectorySelect.options[0].value;trajectorySelect.value=state.currentFile;state.currentIndex=0;enterCompact();render();}else {clearDisplay();exitCompact();}}
     trajectorySelect.addEventListener('change',()=>{state.currentFile=trajectorySelect.value;state.currentIndex=0;render();});
   function clearDisplay(){inputMessagesEl.innerHTML='';outputMessagesEl.innerHTML='';detailsEl.innerHTML='';totalSteps.textContent='/ 0';[firstStep,prevStep,nextStep,lastStep,jumpStep,exportCurrent,exportTrajectory].forEach(b=>b.disabled=true);disableModeButtons(true);}
