@@ -96,9 +96,31 @@ Trajectory Browser 是一个简洁高效的在线工具，专为可视化和浏�
 
 如有问题或建议，请通过以下方式联系：
 
-- 📧 Email: linxy59@mail2.sysu.edu.cn
-- 🐛 Issues: [GitHub Issues](https://github.com/LinXueyuanStdio/trajv/issues)
 
----
+## JSONL Viewer VS Code 扩展
 
+本仓库已添加一个 VS Code 扩展，可用自定义只读编辑器打开以 `.jsonl` 为后缀的文件，并使用仓库根目录的 `index.html` 作为 Webview UI 模板进行展示。
+
+### 主要特性
+- 通过自定义编辑器自动接管 `*.jsonl` 文件，优先级为 default。
+- 扩展会读取 `.jsonl` 文件内容并通过 Webview 渲染。页面中会在 `#jsonl-root` 容器内以逐行的方式显示内容（带行号）。
+- 自动注入 CSP 与脚本，确保在 Webview 环境下安全运行。
+
+### 开发与调试
+1. 安装依赖并编译：
+	- 在 VS Code 运行“任务: 运行任务”或使用调试配置会自动执行 `npm run compile`。
+2. 启动扩展宿主：
+	- 在“运行和调试”面板选择“Run Extension”，会打开新的 Extension Development Host。
+3. 打开任意 `.jsonl` 文件，即会以“JSONL Viewer (TrajV)”打开。
+
+### 打包
+可使用 `vsce` 打包扩展：
+```
+npm run package
+```
+
+### 注意
+- 该编辑器为只读显示，不会修改 `.jsonl` 文件内容。
+- Webview 将尝试重写 `index.html` 中的本地资源链接到 Webview 可访问的 `vscode-resource` 形式，若资源路径异常，请检查资源是否存在于工作区内。
+- 未打开工作区时也可直接打开单个 `.jsonl` 文件：扩展会优先在该文件所在目录查找 `index.html`，找不到则使用内置模板（`media/template-index.html`）。
 ⭐ 如果这个项目对您有帮助，请给它一个星星！
