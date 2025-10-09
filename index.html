@@ -276,7 +276,7 @@
       </div>
     </div>
   </main>
-  <div class="footer">构建时间: <span id="buildTime"></span></div>
+  
   <script>
   const state={files:new Map(),currentFile:null,currentIndex:0,wrapStates:{},lang:(navigator.language||'').toLowerCase().startsWith('zh')?'zh':'en',inputMode:'rich',outputMode:'rich'};
     const el=id=>document.getElementById(id);
@@ -317,21 +317,76 @@
   exportCurrent.textContent=t('exportCurrent');exportTrajectory.textContent=t('exportTrajectory');
   const ttl=document.querySelector('#imgPreviewOverlay .mac-title'); if(ttl) ttl.textContent=t('previewTitle');}
     langSelect.value=state.lang;langSelect.addEventListener('change',()=>{state.lang=langSelect.value;applyLangStatic();render();});
-    document.addEventListener('DOMContentLoaded',()=>el('buildTime').textContent=new Date().toLocaleString());
     function setStatus(msg,ok=true){statusEl.textContent=msg;statusEl.style.color=ok?'var(--muted)':'var(--danger)';}
   selectFilesBtn.addEventListener('click',()=>fileInput.click());
   fileInput.addEventListener('change',()=>{if(!fileInput.files.length)return;enterCompact();loadSelectedFiles();});
-    function readFileAsText(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=e=>rej(e);r.readAsText(f);});}
+    // --- Stream JSONL from File to support very large files ---
+    async function parseJSONLFile(file,onProgress){
+      const reader = file.stream().getReader();
+      const decoder = new TextDecoder();
+      let {value,done} = await reader.read();
+      let buffer = '';
+      const steps=[];
+      let lineNo=0;
+      let lastTick=0;
+      function pushLine(line){
+        const trimmed=line.trim();
+        if(!trimmed) return;
+        try{
+          const obj=JSON.parse(trimmed);
+          const inference=obj.inference_args||obj.inferenceArgs||{};
+          let tools=obj.tools||[];
+          if((!tools||!tools.length)&&inference&&Array.isArray(inference.tools)&&inference.tools.length) tools=inference.tools;
+          const stepObj={
+            url:obj.url||'',
+            input_messages:obj.input_messages||obj.inputMessages||[],
+            output_messages:obj.output_messages||obj.outputMessages||[],
+            inference_args:inference,
+            tools:tools||[],
+            is_answer:obj.is_answer||obj.isAnswer||false,
+            turn:obj.turn??0,
+            step:obj.step??(steps.length),
+            meta:obj.meta||{}
+          };
+          if(obj.edited_input_messages) stepObj.edited_input_messages=obj.edited_input_messages;
+          if(obj.edited_output_messages) stepObj.edited_output_messages=obj.edited_output_messages;
+          if(obj.edited_tools) stepObj.edited_tools=obj.edited_tools;
+          steps.push(stepObj);
+        }catch(e){ console.warn('跳过无效 JSON 行',lineNo,e); }
+      }
+      while(!done){
+        buffer += decoder.decode(value,{stream:true});
+        let idx;
+        while((idx=buffer.indexOf('\n'))!==-1){
+          const line = buffer.slice(0,idx);
+          buffer = buffer.slice(idx+1);
+          lineNo++;
+          pushLine(line);
+        }
+        const now=performance.now();
+        if(typeof onProgress==='function' && now-lastTick>200){
+          lastTick=now;
+          try{ onProgress({lines:lineNo,steps:steps.length}); }catch{}
+        }
+        ({value,done}=await reader.read());
+      }
+      // flush remaining
+      buffer += decoder.decode();
+      if(buffer.length){ lineNo++; pushLine(buffer); }
+      if(typeof onProgress==='function'){
+        try{ onProgress({lines:lineNo,steps:steps.length,done:true}); }catch{}
+      }
+      return {steps};
+    }
   async function loadSelectedFiles(){
     if(!fileInput.files.length)return;
     let hadError=false;
     let latestKey=null; let latestMtime=-1;
     for(const f of fileInput.files){
       try{
-        const text=await readFileAsText(f);
-        const {steps,rawLines}=parseJSONL(text);
+        const {steps}=await parseJSONLFile(f,(p)=>{setStatus(`解析 ${f.name} … ${p.steps||0} steps`,true);});
         const mtime=typeof f.lastModified==='number'?f.lastModified:Date.now();
-        state.files.set(f.name,{steps,rawLines,mtime});
+        state.files.set(f.name,{steps,mtime});
         if(mtime>latestMtime){latestMtime=mtime;latestKey=f.name;}
       }catch(e){
         console.error(e);hadError=true;setStatus(t('parseFailed')+f.name,false);
@@ -352,10 +407,9 @@
       if(!f.name.toLowerCase().endsWith('.jsonl')){skipped++;continue;}
       const display=f.webkitRelativePath||f.name;
       try{
-        const text=await readFileAsText(f);
-        const {steps,rawLines}=parseJSONL(text);
+        const {steps}=await parseJSONLFile(f,(p)=>{setStatus(`解析 ${display} … ${p.steps||0} steps`,true);});
         const mtime=typeof f.lastModified==='number'?f.lastModified:Date.now();
-        state.files.set(display,{steps,rawLines,mtime});
+        state.files.set(display,{steps,mtime});
         loaded++;
         if(mtime>latestMtime){latestMtime=mtime;latestKey=display;}
       }catch(e){
