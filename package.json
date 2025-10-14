@@ -1,0 +1,41 @@
+{
+  "name": "trajv-jsonl-viewer",
+  "displayName": "TrajV JSONL Viewer",
+  "description": "使用仓库根目录的 index.html 作为 Webview，自定义打开并展示 .jsonl 文件。",
+  "version": "0.0.1",
+  "publisher": "linxueyuanstudio",
+  "license": "SEE LICENSE IN LICENSE",
+  "engines": {
+    "vscode": "^1.84.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "trajv.jsonlViewer",
+        "displayName": "JSONL Viewer (TrajV)",
+        "selector": [
+          { "filenamePattern": "**/*.jsonl" }
+        ],
+        "priority": "default"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package",
+    "lint": "echo 'No linter configured'"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "@types/vscode": "^1.84.0",
+    "typescript": "^5.6.3",
+    "vsce": "^2.15.0"
+  }
+}
