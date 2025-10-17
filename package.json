@@ -1,16 +1,39 @@
 {
   "name": "trajv-jsonl-viewer",
   "displayName": "TrajV JSONL Viewer",
-  "description": "使用仓库根目录的 index.html 作为 Webview，自定义打开并展示 .jsonl 文件。",
-  "version": "0.0.1",
-  "publisher": "linxueyuanstudio",
-  "license": "SEE LICENSE IN LICENSE",
+  "description": "轨迹浏览器，打开并展示 agent rollout 文件，本质是 .jsonl 文件。https://linxueyuan.online/trajv",
+  "version": "0.1.0",
+  "publisher": "LinXueyuanStdio",
+  "license": "MIT",
   "engines": {
     "vscode": "^1.84.0"
   },
   "categories": [
     "Other"
   ],
+  "keywords": [
+    "jsonl",
+    "agent trajectory",
+    "agent rollout",
+    "rollout",
+    "trajectory",
+    "viewer",
+    "custom editor",
+    "webview"
+  ],
+  "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#1e1f22",
+    "theme": "dark"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LinXueyuanStdio/trajv"
+  },
+  "bugs": {
+    "url": "https://github.com/LinXueyuanStdio/trajv/issues"
+  },
+  "homepage": "https://github.com/LinXueyuanStdio/trajv#readme",
   "main": "./out/extension.js",
   "activationEvents": [],
   "contributes": {
@@ -19,23 +42,29 @@
         "viewType": "trajv.jsonlViewer",
         "displayName": "JSONL Viewer (TrajV)",
         "selector": [
-          { "filenamePattern": "**/*.jsonl" }
+          {
+            "filenamePattern": "**/*.jsonl"
+          }
         ],
         "priority": "default"
       }
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "npm run build:icon && npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "package": "vsce package",
+    "prepackage": "mkdir -p dist",
+    "package": "npm run prepackage && vsce package --out dist/trajv-jsonl-viewer-${npm_package_version}.vsix",
+    "publish:marketplace": "vsce publish",
+    "build:icon": "node scripts/build-icon.js",
     "lint": "echo 'No linter configured'"
   },
   "devDependencies": {
     "@types/node": "^20.14.10",
     "@types/vscode": "^1.84.0",
     "typescript": "^5.6.3",
-    "vsce": "^2.15.0"
+    "vsce": "^2.15.0",
+    "@resvg/resvg-js": "^2.6.2"
   }
 }
