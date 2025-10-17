@@ -4,6 +4,12 @@
   <meta charset="UTF-8" />
   <title>Trajectory 浏览器</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <!-- Favicon: prefer assets icon, fallback to media icon -->
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml" sizes="any">
+  <link rel="icon" href="assets/icon.png" type="image/png">
+  <link rel="apple-touch-icon" href="assets/icon.png">
+  <!-- Fallback to media icon if assets is unavailable -->
+  <link rel="alternate icon" href="media/icon.png" type="image/png">
   <style>
     :root { color-scheme: light dark; --bg:#1e1f22; --panel:#2a2d31; --panel-alt:#35393f; --border:#444c56; --accent:#3d82f6; --accent-hover:#1d5fd1; --danger:#d9534f; --text:#e6e6e6; --muted:#9aa0a6; font-family: system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif; }
     body { margin:0; background:var(--bg); color:var(--text); display:flex; flex-direction:column; min-height:100vh; }
@@ -276,7 +282,7 @@
       </div>
     </div>
   </main>
-  
+
   <script>
   const state={files:new Map(),currentFile:null,currentIndex:0,wrapStates:{},lang:(navigator.language||'').toLowerCase().startsWith('zh')?'zh':'en',inputMode:'rich',outputMode:'rich'};
     const el=id=>document.getElementById(id);
