@@ -1,14 +1,23 @@
-# Trajectory Browser
+<h1 align="center">
+	<img src="./media/icon.png" width="28" alt="TrajV" style="vertical-align:middle;margin-right:8px;" />
+	Trajectory Browser / TrajV JSONL Viewer
+</h1>
 
 ![GitHub Repo stars](https://img.shields.io/github/stars/LinXueyuanStdio/trajv?style=social) ![GitHub issues](https://img.shields.io/github/issues/LinXueyuanStdio/trajv) ![GitHub license](https://img.shields.io/github/license/LinXueyuanStdio/trajv) ![GitHub last commit](https://img.shields.io/github/last-commit/LinXueyuanStdio/trajv) ![GitHub contributors](https://img.shields.io/github/contributors/LinXueyuanStdio/trajv) ![GitHub repo size](https://img.shields.io/github/repo-size/LinXueyuanStdio/trajv)
+
+[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/linxueyuanstudio.trajv-jsonl-viewer?label=VS%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=linxueyuanstudio.trajv-jsonl-viewer)
+[![Visual Studio Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/linxueyuanstudio.trajv-jsonl-viewer)](https://marketplace.visualstudio.com/items?itemName=linxueyuanstudio.trajv-jsonl-viewer)
+[![Open VSX](https://img.shields.io/badge/Open%20VSX-coming%20soon-grey)](https://open-vsx.org/extension/linxueyuanstudio/trajv-jsonl-viewer)
 
 > 🚀 Trajectory Browser: Visualizing and navigating agent rollout trajectory files seamlessly.
 
 > 🚀 轨迹浏览器：浏览 agent rollout 轨迹文件
 
+在线预览：https://linxueyuan.online/trajv/
+
 ⭐ 如果这个项目对您有帮助，请给它一个星星！
 
-![](./screenshot.png)
+![](./assets/screenshot.png)
 
 ## 📖 项目简介
 
@@ -21,7 +30,8 @@ Trajectory Browser 是一个简洁高效的在线工具，专为可视化和浏�
 - 🧩 **美化视图与 JSON 切换**：支持美化视图、原始 JSON、编辑模式自由切换，便于数据理解与修改。
 - 📝 **内置编辑与对比**：可直接编辑 step 内容，支持与原始数据对比，便捷追踪修改。
 - 📤 **导出功能**：支持导出当前 step 或完整轨迹为 JSON 文件。
-- 🔦 **高亮与搜索**：支持高亮答案、结构展开、内容搜索、关键字段标记。
+- ⚡ **超大 JSONL 流式加载**：基于 ReadableStream + TextDecoder 按行解析，避免整文件读入内存。
+- � **高亮与搜索**：支持高亮答案、结构展开、内容搜索、关键字段标记。
 - 🧭 **多语言界面**：自动适配中英文界面。
 - 💡 **响应式设计**：适配桌面与移动端，界面美观现代。
 
@@ -113,14 +123,15 @@ Trajectory Browser 是一个简洁高效的在线工具，专为可视化和浏�
 	- 在“运行和调试”面板选择“Run Extension”，会打开新的 Extension Development Host。
 3. 打开任意 `.jsonl` 文件，即会以“JSONL Viewer (TrajV)”打开。
 
-### 打包
-可使用 `vsce` 打包扩展：
-```
-npm run package
-```
+### 安装
+- 从 VS Marketplace 安装：在 VS Code 中搜索 “TrajV JSONL Viewer”，或访问商店页面安装：
+	- https://marketplace.visualstudio.com/items?itemName=linxueyuanstudio.trajv-jsonl-viewer
+- 本地安装 `.vsix`：
+	1. 打包：`npm run package`
+	2. VS Code 命令面板：Install from VSIX...，选择生成的 `.vsix`
 
 ### 注意
 - 该编辑器为只读显示，不会修改 `.jsonl` 文件内容。
-- Webview 将尝试重写 `index.html` 中的本地资源链接到 Webview 可访问的 `vscode-resource` 形式，若资源路径异常，请检查资源是否存在于工作区内。
-- 未打开工作区时也可直接打开单个 `.jsonl` 文件：扩展会优先在该文件所在目录查找 `index.html`，找不到则使用内置模板（`media/template-index.html`）。
+- 未打开工作区时也可直接打开单个 `.jsonl` 文件。
+
 ⭐ 如果这个项目对您有帮助，请给它一个星星！
