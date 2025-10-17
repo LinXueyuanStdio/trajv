@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <title>Trajectory 浏览器</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <!-- Favicon for Webview: use bundled media icon (will be rewritten to webview URI) -->
+  <link rel="icon" href="media/icon.png" type="image/png">
+  <link rel="apple-touch-icon" href="media/icon.png">
   <style>
     /* VS Code editor-open scenario: pre-hide import UI to avoid flash */
     #fileArea, #trajectorySelect { display: none !important; }
@@ -278,7 +281,7 @@
       </div>
     </div>
   </main>
-  
+
   <script>
   const state={files:new Map(),currentFile:null,currentIndex:0,wrapStates:{},lang:(navigator.language||'').toLowerCase().startsWith('zh')?'zh':'en',inputMode:'rich',outputMode:'rich'};
     const el=id=>document.getElementById(id);
