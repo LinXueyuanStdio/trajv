@@ -43,7 +43,7 @@
         "displayName": "JSONL Viewer (TrajV)",
         "selector": [
           {
-            "filenamePattern": "**/*.jsonl"
+            "filenamePattern": "**/*.rollout.jsonl"
           }
         ],
         "priority": "default"
