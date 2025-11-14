@@ -10,7 +10,18 @@
   <link rel="apple-touch-icon" href="assets/icon.png">
   <!-- Fallback to media icon if assets is unavailable -->
   <link rel="alternate icon" href="media/icon.png" type="image/png">
+  <!-- svelte-jsoneditor CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/svelte-jsoneditor@0.23.8/themes/jse-theme-dark.css" rel="stylesheet">
   <style>
+    /* svelte-jsoneditor custom theme integration */
+    .jse-theme-dark {
+      --jse-theme-color: var(--accent);
+      --jse-theme-color-highlight: var(--accent-hover);
+      --jse-background-color: var(--panel);
+      --jse-panel-background: var(--panel-alt);
+      --jse-text-color: var(--text);
+      --jse-text-color-inverse: var(--bg);
+    }
     :root { color-scheme: light dark; --bg:#1e1f22; --panel:#2a2d31; --panel-alt:#35393f; --border:#444c56; --accent:#3d82f6; --accent-hover:#1d5fd1; --danger:#d9534f; --text:#e6e6e6; --muted:#9aa0a6; font-family: system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif; }
     body { margin:0; background:var(--bg); color:var(--text); display:flex; flex-direction:column; min-height:100vh; }
     header { padding:.75rem 1rem; background:var(--panel); display:flex; flex-wrap:wrap; gap:.75rem; align-items:center; border-bottom:1px solid var(--border); }
@@ -140,7 +151,7 @@
   .json-tree ul{list-style:none;margin:0;padding:0 0 0 1rem;border-left:1px solid #2a3238;}
   .json-tree li{position:relative;margin:0;padding:.05rem 0;}
   .json-tree .jt-line{display:flex;align-items:flex-start;gap:.25rem;cursor:default;}
-  .json-tree .jt-toggle{cursor:pointer;user-select:none;color:var(--accent);font-size:.6rem;display:inline-flex;align-items:center;justify-content:center;width:1rem;}
+  .json-tree .jt-toggle{cursor:pointer;-webkit-user-select:none;user-select:none;color:var(--accent);font-size:.6rem;display:inline-flex;align-items:center;justify-content:center;width:1rem;}
   .json-tree .jt-toggle::before{content:'▼';transition:transform .18s ease;}
   .json-tree .collapsed > .jt-line .jt-toggle::before{transform:rotate(-90deg);}
   .json-tree .jt-key{color:#8ab4f8;}
@@ -220,6 +231,25 @@
   .mac-title{font-size:.72rem;color:#cdd3d8;letter-spacing:.2px;}
   .img-preview-body{background:#0f1215;display:flex;align-items:center;justify-content:center;padding:.5rem;}
   .img-preview-body img{max-width:95vw;max-height:calc(95vh - 48px);object-fit:contain;background:#000;border-radius:6px;}
+  /* Step Details Modal */
+  .step-details-modal{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:10000;-webkit-backdrop-filter:blur(1.5px);backdrop-filter:blur(1.5px);padding:2vh 2vw;}
+  .step-details-modal.show{display:flex;}
+  .step-details-window{background:var(--panel);border:1px solid var(--border);border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 0 1px #0006;display:flex;flex-direction:column;width:min(96vw,1400px);height:96vh;overflow:hidden;}
+  .step-details-titlebar{height:48px;background:linear-gradient(180deg,#2b2f34,#25292e);border-bottom:1px solid #0006;display:flex;align-items:center;gap:.75rem;padding:0 1.25rem;flex-shrink:0;}
+  .step-details-titlebar .title{font-size:.9rem;color:#cdd3d8;letter-spacing:.3px;font-weight:600;flex:1;}
+  .step-details-close{background:#ff5f57;width:12px;height:12px;border-radius:50%;cursor:pointer;box-shadow:inset 0 0 0 1px #0005,0 1px 0 #0006;transition:background .15s;}
+  .step-details-close:hover{background:#ff3b30;}
+  .step-details-toolbar{height:44px;background:#1e2226;border-bottom:1px solid #0006;display:flex;align-items:center;gap:.5rem;padding:0 1rem;flex-shrink:0;}
+  .step-details-toolbar button{padding:.4rem .85rem;border-radius:5px;border:1px solid #3a4149;background:#2b3137;color:#cdd3d8;font-size:.8rem;cursor:pointer;transition:all .15s;}
+  .step-details-toolbar button:hover{background:#343b42;border-color:#4a545c;}
+  .step-details-toolbar button.primary{background:#0078d4;border-color:#005a9e;color:#fff;}
+  .step-details-toolbar button.primary:hover{background:#006cbd;}
+  .step-details-toolbar .info{flex:1;text-align:right;font-size:.75rem;color:#8b959e;}
+  .step-details-toolbar .editor-status{padding:.25rem .5rem;border-radius:3px;font-weight:500;}
+  .step-details-toolbar .editor-status.ok{color:#6fcd86;background:#1a3326;}
+  .step-details-toolbar .editor-status.err{color:#f48771;background:#3d2420;}
+  .step-details-body{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0;}
+  .step-details-editor{flex:1;overflow:auto;min-height:0;}
   </style>
 </head>
 <body>
@@ -241,6 +271,7 @@
       <span id="totalSteps">/ 0</span><button id="nextStep" disabled>&gt;</button><button id="lastStep" disabled>&gt;&gt;</button>
     </div>
     <div class="toolbar">
+      <button id="stepDetailsBtn" disabled>Step Details</button>
       <button id="exportCurrent" disabled>导出当前 Step</button>
       <button id="exportTrajectory" disabled>导出轨迹</button>
       <select id="langSelect" title="Language">
@@ -256,15 +287,12 @@
     </a>
   </header>
   <!-- dropzone merged into fileArea -->
-  <div class="collapse-bar" id="collapseBar"><span class="chevron">▼</span><h2 id="detailHeader">步骤详情 (tools / inference_args / meta)</h2><span id="detailSummary" class="status"></span></div>
-  <section id="details"></section>
   <main>
     <div class="columns">
       <div class="col" id="inputCol">
         <div class="panel-header"><h3 class="panel-title" id="inputPanelTitle">Input Messages</h3>
           <div id="inputModeBtns" class="mode-buttons" data-target="input">
             <button data-mode="rich" class="active" data-i18n="mode.rich">美化视图</button>
-            <button data-mode="json" data-i18n="mode.json">JSON</button>
             <button data-mode="edit" data-i18n="mode.edit">编辑</button>
           </div>
         </div>
@@ -274,7 +302,6 @@
         <div class="panel-header"><h3 class="panel-title" id="outputPanelTitle">Output Messages</h3>
           <div id="outputModeBtns" class="mode-buttons" data-target="output">
             <button data-mode="rich" class="active" data-i18n="mode.rich">美化视图</button>
-            <button data-mode="json" data-i18n="mode.json">JSON</button>
             <button data-mode="edit" data-i18n="mode.edit">编辑</button>
           </div>
         </div>
@@ -283,16 +310,44 @@
     </div>
   </main>
 
+  <!-- Step Details Modal -->
+  <div id="stepDetailsModal" class="step-details-modal">
+    <div class="step-details-window">
+      <div class="step-details-titlebar">
+        <span class="step-details-close" title="Close"></span>
+        <div class="title">Step Details - Raw JSON</div>
+      </div>
+      <div class="step-details-toolbar">
+        <button id="stepDetailsSave" class="primary">保存</button>
+        <button id="stepDetailsReset">重置</button>
+        <div class="info">
+          <span id="stepDetailsStatus" class="editor-status ok">有效 JSON</span>
+        </div>
+      </div>
+      <div class="step-details-body">
+        <div id="stepDetailsEditor" class="step-details-editor"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- svelte-jsoneditor script -->
+  <script type="module">
+    import { createJSONEditor } from 'https://cdn.jsdelivr.net/npm/vanilla-jsoneditor/standalone.js'
+
+    // Make it globally available
+    window.createJSONEditor = createJSONEditor;
+  </script>
   <script>
-  const state={files:new Map(),currentFile:null,currentIndex:0,wrapStates:{},lang:(navigator.language||'').toLowerCase().startsWith('zh')?'zh':'en',inputMode:'rich',outputMode:'rich'};
+  const state={files:new Map(),currentFile:null,currentIndex:0,wrapStates:{},lang:(navigator.language||'').toLowerCase().startsWith('zh')?'zh':'en',inputMode:'rich',outputMode:'rich',inputEditor:null,outputEditor:null};
     const el=id=>document.getElementById(id);
   const fileInput=el('fileInput'),trajectorySelect=el('trajectorySelect');
     const firstStep=el('firstStep'),prevStep=el('prevStep'),nextStep=el('nextStep'),lastStep=el('lastStep');
     const jumpStep=el('jumpStep'),totalSteps=el('totalSteps'),statusEl=el('status');
   const inputMessagesEl=el('inputMessages'),outputMessagesEl=el('outputMessages');
-  const detailsEl=el('details'),collapseBar=el('collapseBar');
-    const exportCurrent=el('exportCurrent'),exportTrajectory=el('exportTrajectory');
-  const detailSummary=el('detailSummary');
+  const exportCurrent=el('exportCurrent'),exportTrajectory=el('exportTrajectory');
+  const stepDetailsBtn=el('stepDetailsBtn');
+  const stepDetailsModal=el('stepDetailsModal');
+  const stepDetailsEditor=el('stepDetailsEditor');
   const inputModeBtns=el('inputModeBtns'),outputModeBtns=el('outputModeBtns');
   const folderBtn=el('folderBtn'),dirInput=el('dirInput');
   const fileArea=el('fileArea');
@@ -301,7 +356,6 @@
     const langSelect=el('langSelect');
     const titleText=el('titleText');
     const stepLabel=el('stepLabel');
-    const detailHeader=el('detailHeader');
     const inputPanelTitle=el('inputPanelTitle');
     const outputPanelTitle=el('outputPanelTitle');
 
@@ -310,14 +364,14 @@
     function exitCompact(){fileArea.classList.remove('compact'); if(fileHint) fileHint.style.display='';}
 
     const I18N={
-  zh:{title:'Trajectory 浏览器',load:'载入',selectFolder:'选择文件夹',selectFiles:'选择文件',hint:'拖拽 JSONL 文件到此处 或 点击按钮选择',skipInfo:'已读取: {loaded} 个，跳过非 JSONL: {skipped} 个',notLoaded:'未加载文件',dragDrop:'拖拽 JSONL 文件到此处 或 使用上方文件选择',step:'Step',highlight:'高亮答案',unhighlight:'取消高亮',exportCurrent:'导出当前 Step',exportTrajectory:'导出轨迹',detailsHeader:'步骤详情 (tools / inference_args / meta)',inputMessages:'Input Messages',outputMessages:'Output Messages',mode:{rich:'美化视图',json:'JSON',edit:'编辑'},copy:'复制',copied:'已复制',fold:'折叠',expandStructure:'展开结构',expandAll:'展开',collapseAll:'全部折叠',searchPlaceholder:'搜索...',wrapOn:'自适应换行',wrapOff:'横向滚动',edit:'编辑',edited:'已编辑',empty:'(空)',tools:'Tools',inferenceArgs:'Inference Args',meta:'Meta',originalStep:'原始 Step JSON',save:'保存',format:'格式化',fullscreen:'全屏',restore:'还原',reset:'恢复原始',back:'返回',diff:'对比',hideDiff:'隐藏对比',validJson:'有效 JSON',invalidRootArray:'根必须是数组',editingArray:'编辑 JSON 数组: message 列表',escHint:'ESC 取消 / Ctrl+S 保存',parseFailed:'解析失败: ',loadingParsing:'解析文件...',zoom:'放大',previewTitle:'图片预览',close:'关闭'},
-  en:{title:'Trajectory Browser',load:'Load',selectFolder:'Select Folder',selectFiles:'Select Files',hint:'Drag JSONL files here or click buttons',skipInfo:'Loaded: {loaded}, skipped non-JSONL: {skipped}',notLoaded:'No file loaded',dragDrop:'Drag JSONL files here or use selectors above',step:'Step',highlight:'Highlight Answer',unhighlight:'Unhighlight',exportCurrent:'Export Current Step',exportTrajectory:'Export Trajectory',detailsHeader:'Step Details (tools / inference_args / meta)',inputMessages:'Input Messages',outputMessages:'Output Messages',mode:{rich:'Rich View',json:'JSON',edit:'Edit'},copy:'Copy',copied:'Copied',fold:'Fold',expandStructure:'Expand Structure',expandAll:'Expand',collapseAll:'Collapse All',searchPlaceholder:'Search...',wrapOn:'Wrap',wrapOff:'Horizontal',edit:'Edit',edited:'Edited',empty:'(empty)',tools:'Tools',inferenceArgs:'Inference Args',meta:'Meta',originalStep:'Raw Step JSON',save:'Save',format:'Format',fullscreen:'Fullscreen',restore:'Restore',reset:'Reset',back:'Back',diff:'Diff',hideDiff:'Hide Diff',validJson:'Valid JSON',invalidRootArray:'Root must be an array',editingArray:'Edit JSON array: messages list',escHint:'ESC Cancel / Ctrl+S Save',parseFailed:'Parse failed: ',loadingParsing:'Parsing files...',zoom:'Zoom',previewTitle:'Image Preview',close:'Close'}
+  zh:{title:'Trajectory 浏览器',load:'载入',selectFolder:'选择文件夹',selectFiles:'选择文件',hint:'拖拽 JSONL 文件到此处 或 点击按钮选择',skipInfo:'已读取: {loaded} 个，跳过非 JSONL: {skipped} 个',notLoaded:'未加载文件',dragDrop:'拖拽 JSONL 文件到此处 或 使用上方文件选择',step:'Step',stepDetails:'步骤详情',highlight:'高亮答案',unhighlight:'取消高亮',exportCurrent:'导出当前 Step',exportTrajectory:'导出轨迹',inputMessages:'Input Messages',outputMessages:'Output Messages',mode:{rich:'美化视图',edit:'编辑'},copy:'复制',copied:'已复制',fold:'折叠',expandStructure:'展开结构',expandAll:'展开',collapseAll:'全部折叠',searchPlaceholder:'搜索...',wrapOn:'自适应换行',wrapOff:'横向滚动',edit:'编辑',edited:'已编辑',empty:'(空)',tools:'Tools',inferenceArgs:'Inference Args',meta:'Meta',originalStep:'原始 Step JSON',save:'保存',format:'格式化',fullscreen:'全屏',restore:'还原',reset:'恢复原始',back:'返回',diff:'对比',hideDiff:'隐藏对比',validJson:'有效 JSON',invalidRootArray:'根必须是数组',editingArray:'编辑 JSON 数组: message 列表',escHint:'ESC 取消 / Ctrl+S 保存',parseFailed:'解析失败: ',loadingParsing:'解析文件...',zoom:'放大',previewTitle:'图片预览',close:'关闭'},
+  en:{title:'Trajectory Browser',load:'Load',selectFolder:'Select Folder',selectFiles:'Select Files',hint:'Drag JSONL files here or click buttons',skipInfo:'Loaded: {loaded}, skipped non-JSONL: {skipped}',notLoaded:'No file loaded',dragDrop:'Drag JSONL files here or use selectors above',step:'Step',stepDetails:'Step Details',highlight:'Highlight Answer',unhighlight:'Unhighlight',exportCurrent:'Export Current Step',exportTrajectory:'Export Trajectory',inputMessages:'Input Messages',outputMessages:'Output Messages',mode:{rich:'Rich View',edit:'Edit'},copy:'Copy',copied:'Copied',fold:'Fold',expandStructure:'Expand Structure',expandAll:'Expand',collapseAll:'Collapse All',searchPlaceholder:'Search...',wrapOn:'Wrap',wrapOff:'Horizontal',edit:'Edit',edited:'Edited',empty:'(empty)',tools:'Tools',inferenceArgs:'Inference Args',meta:'Meta',originalStep:'Raw Step JSON',save:'Save',format:'Format',fullscreen:'Fullscreen',restore:'Restore',reset:'Reset',back:'Back',diff:'Diff',hideDiff:'Hide Diff',validJson:'Valid JSON',invalidRootArray:'Root must be an array',editingArray:'Edit JSON array: messages list',escHint:'ESC Cancel / Ctrl+S Save',parseFailed:'Parse failed: ',loadingParsing:'Parsing files...',zoom:'Zoom',previewTitle:'Image Preview',close:'Close'}
   };
   // i18n additions for image preview (non-breaking augment)
   if(!I18N.zh.zoom){ try{ Object.assign(I18N.zh, { zoom:'放大', previewTitle:'图片预览', close:'关闭' }); }catch(e){} }
   if(!I18N.en.zoom){ try{ Object.assign(I18N.en, { zoom:'Zoom', previewTitle:'Image Preview', close:'Close' }); }catch(e){} }
   function t(k){const lang=I18N[state.lang]||I18N.zh;return k.split('.').reduce((o,p)=>o&&o[p],lang)||k;}
-  function applyLangStatic(){titleText.textContent=t('title');folderBtn.textContent=t('selectFolder');selectFilesBtn.textContent=t('selectFiles');fileHint.textContent=t('hint');if(!state.files.size){statusEl.textContent=t('notLoaded');statusEl.style.display='';}stepLabel.textContent=t('step');detailHeader.textContent=t('detailsHeader');inputPanelTitle.textContent=t('inputMessages');outputPanelTitle.textContent=t('outputMessages');
+  function applyLangStatic(){titleText.textContent=t('title');folderBtn.textContent=t('selectFolder');selectFilesBtn.textContent=t('selectFiles');fileHint.textContent=t('hint');if(!state.files.size){statusEl.textContent=t('notLoaded');statusEl.style.display='';}stepLabel.textContent=t('step');stepDetailsBtn.textContent=t('stepDetails');inputPanelTitle.textContent=t('inputMessages');outputPanelTitle.textContent=t('outputMessages');
     // update mode buttons text
     document.querySelectorAll('.mode-buttons button').forEach(btn=>{const key=btn.getAttribute('data-i18n');if(key)btn.textContent=t(key);});
   exportCurrent.textContent=t('exportCurrent');exportTrajectory.textContent=t('exportTrajectory');
@@ -432,74 +486,184 @@
   }
   function refreshFileSelect(){trajectorySelect.innerHTML='';for(const name of state.files.keys()){const opt=document.createElement('option');opt.value=name;opt.textContent=name+' ('+state.files.get(name).steps.length+')';trajectorySelect.appendChild(opt);}trajectorySelect.disabled=!state.files.size;if(state.files.size){if(!state.currentFile||!state.files.has(state.currentFile))state.currentFile=trajectorySelect.options[0].value;trajectorySelect.value=state.currentFile;state.currentIndex=0;enterCompact();render();}else {clearDisplay();exitCompact();}}
     trajectorySelect.addEventListener('change',()=>{state.currentFile=trajectorySelect.value;state.currentIndex=0;render();});
-  function clearDisplay(){inputMessagesEl.innerHTML='';outputMessagesEl.innerHTML='';detailsEl.innerHTML='';totalSteps.textContent='/ 0';[firstStep,prevStep,nextStep,lastStep,jumpStep,exportCurrent,exportTrajectory].forEach(b=>b.disabled=true);disableModeButtons(true);}
+  function clearDisplay(){inputMessagesEl.innerHTML='';outputMessagesEl.innerHTML='';totalSteps.textContent='/ 0';[firstStep,prevStep,nextStep,lastStep,jumpStep,exportCurrent,exportTrajectory,stepDetailsBtn].forEach(b=>b.disabled=true);disableModeButtons(true);}
   function disableModeButtons(disabled){document.querySelectorAll('.mode-buttons button').forEach(b=>b.disabled=disabled);}
-  function render(){if(!state.currentFile){clearDisplay();applyLangStatic();return;}const {steps}=state.files.get(state.currentFile);const total=steps.length;if(!total){clearDisplay();applyLangStatic();return;}state.currentIndex=Math.min(Math.max(0,state.currentIndex),total-1);const stepObj=steps[state.currentIndex];totalSteps.textContent='/ '+total;jumpStep.disabled=false;jumpStep.value=state.currentIndex+1;[firstStep,prevStep,nextStep,lastStep,exportCurrent,exportTrajectory].forEach(b=>b.disabled=false);disableModeButtons(false);firstStep.disabled=prevStep.disabled=state.currentIndex===0;lastStep.disabled=nextStep.disabled=state.currentIndex===total-1;renderMessages(stepObj);renderDetails(stepObj);updateModeButtonsUI();}applyLangStatic();
-    function renderMessages(stepObj){const inList=stepObj.edited_input_messages||stepObj.input_messages||[];const outList=stepObj.edited_output_messages||stepObj.output_messages||[];inputMessagesEl.innerHTML='';if(state.inputMode==='json'){inputMessagesEl.appendChild(buildJsonView(inList,'input'));}else if(state.inputMode==='edit'){inputMessagesEl.appendChild(buildEditArea(stepObj,'input'));}else{inList.forEach((m,i)=>inputMessagesEl.appendChild(createMessageEl(m,i,'input',stepObj.is_answer,!!stepObj.edited_input_messages)));}outputMessagesEl.innerHTML='';if(state.outputMode==='json'){outputMessagesEl.appendChild(buildJsonView(outList,'output'));}else if(state.outputMode==='edit'){outputMessagesEl.appendChild(buildEditArea(stepObj,'output'));}else{outList.forEach((m,i)=>outputMessagesEl.appendChild(createMessageEl(m,i,'output',stepObj.is_answer,!!stepObj.edited_output_messages)));}}
+    function render(){if(!state.currentFile){clearDisplay();applyLangStatic();return;}const {steps}=state.files.get(state.currentFile);const total=steps.length;if(!total){clearDisplay();applyLangStatic();return;}state.currentIndex=Math.min(Math.max(0,state.currentIndex),total-1);const stepObj=steps[state.currentIndex];totalSteps.textContent='/ '+total;jumpStep.disabled=false;jumpStep.value=state.currentIndex+1;[firstStep,prevStep,nextStep,lastStep,exportCurrent,exportTrajectory,stepDetailsBtn].forEach(b=>b.disabled=false);disableModeButtons(false);firstStep.disabled=prevStep.disabled=state.currentIndex===0;lastStep.disabled=nextStep.disabled=state.currentIndex===total-1;renderMessages(stepObj);updateModeButtonsUI();}applyLangStatic();
+    function renderMessages(stepObj){
+      const inList=stepObj.edited_input_messages||stepObj.input_messages||[];
+      const outList=stepObj.edited_output_messages||stepObj.output_messages||[];
+
+      // Cleanup previous editors
+      if(inputMessagesEl.firstChild && inputMessagesEl.firstChild._editor){
+        try{ inputMessagesEl.firstChild._editor.destroy(); }catch(e){}
+      }
+      inputMessagesEl.innerHTML='';
+
+      if(state.inputMode==='edit'){
+        inputMessagesEl.appendChild(buildEditArea(stepObj,'input'));
+      }else{
+        inList.forEach((m,i)=>inputMessagesEl.appendChild(createMessageEl(m,i,'input',stepObj.is_answer,!!stepObj.edited_input_messages)));
+      }
+
+      // Cleanup previous editors
+      if(outputMessagesEl.firstChild && outputMessagesEl.firstChild._editor){
+        try{ outputMessagesEl.firstChild._editor.destroy(); }catch(e){}
+      }
+      outputMessagesEl.innerHTML='';
+
+      if(state.outputMode==='edit'){
+        outputMessagesEl.appendChild(buildEditArea(stepObj,'output'));
+      }else{
+        outList.forEach((m,i)=>outputMessagesEl.appendChild(createMessageEl(m,i,'output',stepObj.is_answer,!!stepObj.edited_output_messages)));
+      }
+    }
   function updateModeButtonsUI(){document.querySelectorAll('#inputModeBtns button').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.inputMode));document.querySelectorAll('#outputModeBtns button').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.outputMode));}
   function initModeButtons(){['input','output'].forEach(kind=>{const root=el(kind==='input'?'inputModeBtns':'outputModeBtns');root.querySelectorAll('button').forEach(btn=>{btn.addEventListener('click',()=>{const mode=btn.dataset.mode; if(kind==='input'){state.inputMode=mode;} else {state.outputMode=mode;} updateModeButtonsUI(); render();});});});}
   initModeButtons();
-  /* new hierarchical JSON viewer */
-  /* Third-party JSONFormatter (MIT) integrated for accurate indentation & folding */
-  // Minimal embedded JSONFormatter (stripped) - MIT License (c) Mohsen Azimi
-  // NOTE: Kept concise to avoid large dependency; supports openAtDepth via re-render.
-  function JSONFormatter(value, openDepth){this.value=value;this.openDepth=openDepth||0;} // simplified
-  JSONFormatter.prototype.render=function(){
-    const container=document.createElement('div');container.className='jf-root';
-    const build=(val,depth)=>{const node=document.createElement('div');node.className='jf-node';
-      if(val&&typeof val==='object'){const isArr=Array.isArray(val);const keys=isArr?val.map((_,i)=>i):Object.keys(val);
-        const header=document.createElement('div');header.className='jf-header';
-        const toggle=document.createElement('span');toggle.className='jf-toggle';toggle.textContent='▼';header.appendChild(toggle);
-        const title=document.createElement('span');title.className='jf-title';title.textContent=isArr?'['+val.length+']':'{'+keys.length+'}';header.appendChild(title);
-        node.appendChild(header);
-        const body=document.createElement('div');body.className='jf-body';
-        keys.forEach(k=>{const row=document.createElement('div');row.className='jf-row';
-          const keySpan=document.createElement('span');keySpan.className='jf-key';keySpan.textContent=isArr?('['+k+']'):JSON.stringify(k)+':';row.appendChild(keySpan);
-          const v=val[k];if(v&&typeof v==='object'){row.appendChild(build(v,depth+1));} else {row.appendChild(buildPrimitive(v));}
-          body.appendChild(row);});
-        node.appendChild(body);
-        if(depth>=this.openDepth){node.classList.add('collapsed');}
-        toggle.addEventListener('click',e=>{e.stopPropagation();node.classList.toggle('collapsed');});
-      } else {node.appendChild(buildPrimitive(val));}
-      return node;};
-    const buildPrimitive=(v)=>{const span=document.createElement('span');span.className='jf-primitive';if(typeof v==='string'){span.classList.add('str');span.textContent=v;} else if(typeof v==='number'){span.classList.add('num');span.textContent=String(v);} else if(typeof v==='boolean'){span.classList.add('bool');span.textContent=String(v);} else if(v===null){span.classList.add('null');span.textContent='null';} else {span.textContent=String(v);}return span;};
-    container.appendChild(build(this.value,0));return container;};
-  const jsonFormatterStyle=`.jf-root{font-family:ui-monospace,monospace;font-size:.68rem;line-height:1.26;}
-  .jf-node{position:relative;margin:.1rem 0;padding:0 .25rem;border-left:1px solid #2a3238;}
-  .jf-node.collapsed>.jf-body{display:none;}
-  .jf-header{display:flex;align-items:center;gap:.3rem;cursor:pointer;}
-  .jf-toggle{color:var(--accent);font-size:.55rem;user-select:none;transition:transform .18s ease;display:inline-block;width:1rem;text-align:center;}
-  .jf-node.collapsed>.jf-header .jf-toggle{transform:rotate(-90deg);} .jf-title{color:#cdd3d8;font-weight:600;}
-  .jf-row{display:flex;align-items:flex-start;gap:.35rem;padding:.05rem 0 .05rem .4rem;}
-  .jf-key{color:#8ab4f8;white-space:nowrap;}
-  .jf-primitive.str{color:#98c379;white-space:pre-wrap;word-break:break-word;}
-  .jf-primitive.num{color:#d19a66;}
-  .jf-primitive.bool{color:#56b6c2;}
-  .jf-primitive.null{color:#c678dd;}`;
-  if(!document.getElementById('jsonFormatterStyle')){const st=document.createElement('style');st.id='jsonFormatterStyle';st.textContent=jsonFormatterStyle;document.head.appendChild(st);}
-  function buildJsonView(data,label){
-    const box=document.createElement('div');box.className='json-block';
-    const toolbar=document.createElement('div');toolbar.className='json-toolbar';
-    toolbar.innerHTML=`<span>${label==='input'?t('inputMessages'):t('outputMessages')} JSON</span>`;
-    const copyBtn=document.createElement('button');copyBtn.textContent=t('copy');
-    const collapseAllBtn=document.createElement('button');collapseAllBtn.textContent=t('collapseAll');
-    const expandAllBtn=document.createElement('button');expandAllBtn.textContent=t('expandAll');
-    const spacer=document.createElement('div');spacer.className='spacer';
-    const searchWrap=document.createElement('div');searchWrap.className='json-search';
-    const searchInput=document.createElement('input');searchInput.placeholder=t('searchPlaceholder');
-    const searchCount=document.createElement('span');searchCount.textContent='0';
-    searchWrap.append(searchInput,searchCount);toolbar.append(copyBtn,collapseAllBtn,expandAllBtn,spacer,searchWrap);box.appendChild(toolbar);
-    const viewerWrap=document.createElement('div');viewerWrap.className='json-tree-wrapper';box.appendChild(viewerWrap);
-  // Use a very large openDepth so nothing is collapsed by default
-  let currentDepth=Number.MAX_SAFE_INTEGER; let formatter; function render(depth){viewerWrap.innerHTML='';formatter=new JSONFormatter(data,depth);viewerWrap.appendChild(formatter.render());}
-    function collapseAll(){viewerWrap.querySelectorAll('.jf-node').forEach(n=>n.classList.add('collapsed'));}
-    function expandAll(){viewerWrap.querySelectorAll('.jf-node').forEach(n=>n.classList.remove('collapsed'));}
-    render(currentDepth);
-    copyBtn.onclick=()=>{navigator.clipboard.writeText(JSON.stringify(data,null,2));copyBtn.textContent=t('copied');setTimeout(()=>copyBtn.textContent=t('copy'),1200);};
-    collapseAllBtn.onclick=()=>collapseAll();
-    expandAllBtn.onclick=()=>expandAll();
-    searchInput.addEventListener('input',()=>{const q=searchInput.value.trim();let c=0;const reg=q?new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i'):null;viewerWrap.querySelectorAll('.jf-row, .jf-header').forEach(el=>el.classList.remove('mark'));if(!reg){searchCount.textContent='0';return;}viewerWrap.querySelectorAll('.jf-row').forEach(row=>{if(reg.test(row.textContent)){row.classList.add('mark');c++;let parent=row.parentElement;while(parent && parent!==viewerWrap){if(parent.classList.contains('jf-node'))parent.classList.remove('collapsed');parent=parent.parentElement;} }});viewerWrap.querySelectorAll('.jf-header').forEach(header=>{if(reg.test(header.textContent)){header.classList.add('mark');c++;let parent=header.parentElement;while(parent && parent!==viewerWrap){if(parent.classList.contains('jf-node'))parent.classList.remove('collapsed');parent=parent.parentElement;} }});searchCount.textContent=String(c);});
-    return box;}
+
+  // --- Build edit area using svelte-jsoneditor ---
+  function buildEditArea(stepObj,side){
+    const eff=side==='input'?(stepObj.edited_input_messages||stepObj.input_messages||[]):(stepObj.edited_output_messages||stepObj.output_messages||[]);
+    const original=side==='input'?(stepObj.input_messages||[]):(stepObj.output_messages||[]);
+
+    const box=document.createElement('div');
+    box.className='edit-box';
+
+    const tb=document.createElement('div');
+    tb.className='editor-toolbar';
+
+    const save=document.createElement('button');
+    save.textContent=t('save');
+    save.className='primary';
+
+    const reset=document.createElement('button');
+    reset.textContent=t('reset');
+
+    const cancel=document.createElement('button');
+    cancel.textContent=t('back');
+
+    const info=document.createElement('div');
+    info.className='info';
+    const statusSpan=document.createElement('span');
+    statusSpan.className='editor-status';
+    statusSpan.textContent=t('validJson');
+    statusSpan.className='editor-status ok';
+    info.appendChild(statusSpan);
+
+    tb.append(save,reset,cancel,info);
+    box.appendChild(tb);
+
+    // Create container for the editor
+    const editorContainer=document.createElement('div');
+    editorContainer.style.height='500px';
+    editorContainer.style.border='1px solid var(--border)';
+    box.appendChild(editorContainer);
+
+    // Check if createJSONEditor is available
+    if (!window.createJSONEditor) {
+      editorContainer.innerHTML = '<div style="padding:20px;color:var(--danger);">JSONEditor 正在加载中...</div>';
+      setTimeout(() => {
+        if (window.createJSONEditor) {
+          editorContainer.innerHTML = '';
+          initJSONEditor();
+        } else {
+          editorContainer.innerHTML = '<div style="padding:20px;color:var(--danger);">JSONEditor 加载失败，请刷新页面重试</div>';
+        }
+      }, 1000);
+      return box;
+    }
+
+    let editor;
+
+    function initJSONEditor() {
+      try {
+        // Initialize JSONEditor in editable tree mode
+        editor = window.createJSONEditor({
+          target: editorContainer,
+          props: {
+            content: { json: eff },
+            readOnly: false,
+            mode: 'tree',
+            mainMenuBar: true,
+            navigationBar: true,
+            statusBar: true,
+            askToFormat: false,
+            escapeControlCharacters: false,
+            escapeUnicodeCharacters: false,
+            onChange: (updatedContent, previousContent, { contentErrors, patchResult }) => {
+              if (contentErrors) {
+                statusSpan.textContent = 'ERR: ' + (contentErrors.validationErrors?.[0]?.message || 'Invalid JSON');
+                statusSpan.className = 'editor-status err';
+              } else {
+                statusSpan.textContent = t('validJson');
+                statusSpan.className = 'editor-status ok';
+              }
+            }
+          }
+        });
+
+        // Store editor reference
+        box._editor = editor;
+
+        setupButtons();
+      } catch(e) {
+        console.error('JSONEditor initialization error:', e);
+        editorContainer.innerHTML = '<div style="padding:20px;color:var(--danger);">JSON 编辑器初始化失败: ' + e.message + '</div>';
+      }
+    }
+
+    function setupButtons() {
+      save.onclick = async () => {
+        if (!editor) return;
+        try {
+          const content = await editor.get();
+          const parsed = content.json;
+
+          if (!Array.isArray(parsed)) {
+            statusSpan.textContent = 'ERR: ' + t('invalidRootArray');
+            statusSpan.className = 'editor-status err';
+            return;
+          }
+
+          if(side==='input') {
+            stepObj.edited_input_messages=parsed;
+          } else {
+            stepObj.edited_output_messages=parsed;
+          }
+          render();
+        } catch(e) {
+          statusSpan.textContent = 'ERR: ' + e.message;
+          statusSpan.className = 'editor-status err';
+        }
+      };
+
+      reset.onclick = () => {
+        if (!editor) return;
+        if(side==='input') {
+          delete stepObj.edited_input_messages;
+        } else {
+          delete stepObj.edited_output_messages;
+        }
+        editor.set({ json: original });
+        statusSpan.textContent = t('validJson');
+        statusSpan.className = 'editor-status ok';
+      };
+
+      cancel.onclick = () => {
+        if(side==='input') {
+          state.inputMode='rich';
+        } else {
+          state.outputMode='rich';
+        }
+        updateModeButtonsUI();
+        render();
+      };
+    }
+
+    initJSONEditor();
+    return box;
+  }
+
   /* (Removed old createMessageEl version to avoid duplication) */
   function createMessageEl(msg,idx,kind,isAnswer,editedFlag=false){const div=document.createElement('div');const role=(msg.role||msg.sender||(kind==='input'?'user':'assistant'));const collapsedDefault=role==='system';div.className='message'+(collapsedDefault?' collapsed':'');const metaItems=[];if(msg.name)metaItems.push('name='+msg.name);if(msg.type)metaItems.push(msg.type);const callId=msg.tool_call_id||msg.call_id; if(callId) metaItems.push('call_id='+callId);if(Array.isArray(msg.tool_calls)&&msg.tool_calls.length)metaItems.push('tool_calls='+msg.tool_calls.length);const metaLine=metaItems.join(' • ');const header=document.createElement('div');header.className='msg-header';header.innerHTML=`<span class="arrow">▶</span><span class="msg-role">${escapeHtml(role)}</span><span>#${idx+1}</span>${metaLine?'<span>'+escapeHtml(metaLine)+'</span>':''}${editedFlag?`<span class="edited-badge">${t('edited')}</span>`:''}`;header.addEventListener('click',()=>{div.classList.toggle('collapsed');});div.appendChild(header);const body=document.createElement('div');body.className='msg-body';if(Array.isArray(msg.content) && msg.content.some(p=>p&&typeof p==='object'&&p.type)){body.appendChild(renderTypedParts(msg.content));} else {const contentText=deriveContent(msg);body.appendChild(renderRichContent(contentText));}
     if(Array.isArray(msg.tool_calls)&&msg.tool_calls.length){body.appendChild(renderToolCalls(msg.tool_calls));}
@@ -537,14 +701,138 @@
   function parseMarkdownToTokens(text){const lines=text.replace(/\r/g,'').split('\n');const tokens=[];let inCode=false;let codeLang='';let codeAccum=[];for(let i=0;i<lines.length;i++){const line=lines[i];const fence=line.match(/^```(.*)$/);if(fence){if(!inCode){inCode=true;codeLang=fence[1].trim();codeAccum=[];}else{tokens.push({type:'code',lang:codeLang,content:codeAccum.join('\n')});inCode=false;codeLang='';codeAccum=[];}continue;}if(inCode){codeAccum.push(line);continue;}tokens.push({type:'line',content:line});}if(inCode){tokens.push({type:'code',lang:codeLang,content:codeAccum.join('\n')});}return tokens;}
   function inlineMarkdown(s){if(!s)return'';let out=escapeHtml(s);out=out.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');out=out.replace(/\*(.+?)\*/g,'<em>$1</em>');out=out.replace(/`([^`]+)`/g,'<code>$1</code>');out=out.replace(/\[(.*?)\]\((https?:[^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');out=out.replace(/(?<!["'=])\b(https?:\/\/[^\s<]+[^<.,;!?)\s])/g,'<a href="$1" target="_blank" rel="noopener">$1</a>');return out;}
   function highlightXml(html){return html.replace(/(&lt;\/?[A-Za-z0-9_:\-]+(?:\s+[^&]*?)?&gt;)/g,'<span class="xml-tag">$1</span>');}
-  function buildEditArea(stepObj,side){const eff=side==='input'?(stepObj.edited_input_messages||stepObj.input_messages||[]):(stepObj.edited_output_messages||stepObj.output_messages||[]);const original=side==='input'?(stepObj.input_messages||[]):(stepObj.output_messages||[]);const box=document.createElement('div');box.className='edit-box';const tb=document.createElement('div');tb.className='editor-toolbar';const save=document.createElement('button');save.textContent=t('save');save.className='primary';const formatBtn=document.createElement('button');formatBtn.textContent=t('format');const expandBtn=document.createElement('button');expandBtn.textContent=t('fullscreen');const reset=document.createElement('button');reset.textContent=t('reset');const cancel=document.createElement('button');cancel.textContent=t('back');const diffBtn=document.createElement('button');diffBtn.textContent=t('diff');diffBtn.className='toggle-diff';const statusSpan=document.createElement('span');statusSpan.className='editor-status';statusSpan.textContent='';const info=document.createElement('div');info.className='info';const countSpan=document.createElement('span');const lineSpan=document.createElement('span');info.append(countSpan,lineSpan,statusSpan);tb.append(save,formatBtn,expandBtn,reset,cancel,diffBtn,info);box.appendChild(tb);const ta=document.createElement('textarea');ta.className='editor-textarea';ta.value=JSON.stringify(eff,null,2);box.appendChild(ta);const diffPre=document.createElement('pre');diffPre.className='diff-original';diffPre.style.display='none';diffPre.textContent=JSON.stringify(original,null,2);box.appendChild(diffPre);const footer=document.createElement('div');footer.className='editor-footer';footer.innerHTML=`<span>${t('editingArray')}</span><span>${t('escHint')}</span>`;box.appendChild(footer);function updateCounts(){let arr;try{arr=JSON.parse(ta.value);}catch{arr=null;}countSpan.textContent=(arr&&Array.isArray(arr)?arr.length:0)+' items';lineSpan.textContent='L:'+ta.value.split('\n').length;}function validate(){let ok=false,msg='';try{const parsed=JSON.parse(ta.value);if(!Array.isArray(parsed))throw new Error(t('invalidRootArray'));ok=true;msg=t('validJson');statusSpan.className='editor-status ok';}catch(e){msg=e.message;statusSpan.className='editor-status err';}statusSpan.textContent=msg;ta.classList.toggle('invalid',!ok);return ok;}function format(){try{const parsed=JSON.parse(ta.value);ta.value=JSON.stringify(parsed,null,2);updateCounts();validate();}catch(e){statusSpan.textContent='ERR: '+e.message;statusSpan.className='editor-status err';}}let expanded=false;function toggleExpand(){expanded=!expanded;expandBtn.textContent=expanded?t('restore'):t('fullscreen');if(expanded){box.style.position='fixed';box.style.top='60px';box.style.left='40px';box.style.right='40px';box.style.bottom='40px';box.style.zIndex=9999;box.style.padding='4px';ta.style.minHeight='calc(100vh - 200px)';document.body.style.overflow='hidden';}else{box.removeAttribute('style');ta.style.minHeight='360px';document.body.style.overflow='';box.className='edit-box';}}let showingDiff=false;function toggleDiff(){showingDiff=!showingDiff;diffPre.style.display=showingDiff?'block':'none';diffBtn.textContent=showingDiff?t('hideDiff'):t('diff');}ta.addEventListener('input',()=>{updateCounts();validate();});save.onclick=()=>{if(!validate())return;try{const parsed=JSON.parse(ta.value);if(side==='input')stepObj.edited_input_messages=parsed;else stepObj.edited_output_messages=parsed;render();}catch(e){statusSpan.textContent='ERR: '+e.message;statusSpan.className='editor-status err';}};formatBtn.onclick=()=>format();expandBtn.onclick=()=>toggleExpand();reset.onclick=()=>{if(side==='input')delete stepObj.edited_input_messages;else delete stepObj.edited_output_messages;ta.value=JSON.stringify(original,null,2);updateCounts();validate();};cancel.onclick=()=>{if(side==='input'){state.inputMode='rich';}else{state.outputMode='rich';}updateModeButtonsUI();render();};diffBtn.onclick=()=>toggleDiff();document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(expanded){toggleExpand();}else{cancel.click();}} if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='s'){e.preventDefault();save.click();}});updateCounts();validate();return box;}
-    function deriveContent(msg){if(typeof msg.content==='string')return msg.content;if(Array.isArray(msg.content))return msg.content.map(c=>typeof c==='string'?c:JSON.stringify(c)).join('\n');if(msg.text)return msg.text; if(msg.message)return typeof msg.message==='string'?msg.message:JSON.stringify(msg.message);return JSON.stringify(msg,null,2);}
-  function renderDetails(stepObj){const tools=(stepObj.edited_tools||stepObj.tools||[]);const inference=stepObj.inference_args||{};const meta=stepObj.meta||{};const summary=[];if(tools.length)summary.push(t('tools')+' '+tools.length);const iaK=Object.keys(inference);if(iaK.length)summary.push('Args '+iaK.length);const metaK=Object.keys(meta);if(metaK.length)summary.push('Meta '+metaK.length);detailSummary.textContent=summary.join(' • ');detailsEl.innerHTML='';const wrap=document.createElement('div');wrap.className='detail-panels';wrap.appendChild(buildEditableCard(t('tools'),tools,stepObj,'tools',{editable:true,defaultOpen:true}));wrap.appendChild(buildCard(t('inferenceArgs'),inference,{search:true}));wrap.appendChild(buildCard(t('meta'),meta));wrap.appendChild(buildCard(t('originalStep'),stepObj));detailsEl.appendChild(wrap);}
-    function buildCard(title,data,opts={}){const {collapsed=false,search=false}=opts;const card=document.createElement('div');card.className='detail-card'+(collapsed?' collapsed':'');const header=document.createElement('div');header.className='detail-card-header';header.innerHTML=`<span class="arrow">▶</span><span class="title">${escapeHtml(title)}</span><span class="count">${Array.isArray(data)?data.length:Object.keys(data||{}).length}</span>`;const btnWrap=document.createElement('button');btnWrap.className='wrap-btn';const wrapKey=(state.currentFile||'')+'|'+state.currentIndex+'|'+title;const init=wrapKey in state.wrapStates?state.wrapStates[wrapKey]:true;state.wrapStates[wrapKey]=init;function syncWrap(){card.classList.toggle('wrap-on',state.wrapStates[wrapKey]);card.classList.toggle('wrap-off',!state.wrapStates[wrapKey]);btnWrap.textContent=state.wrapStates[wrapKey]?t('wrapOn'):t('wrapOff');btnWrap.classList.toggle('active',state.wrapStates[wrapKey]);}btnWrap.onclick=(e)=>{e.stopPropagation();state.wrapStates[wrapKey]=!state.wrapStates[wrapKey];syncWrap();};header.appendChild(btnWrap);const btnCopy=document.createElement('button');btnCopy.textContent=t('copy');header.appendChild(btnCopy);if(search){const sWrap=document.createElement('div');sWrap.className='detail-search';const inp=document.createElement('input');inp.placeholder=t('searchPlaceholder');const count=document.createElement('span');count.textContent='0';sWrap.append(inp,count);header.appendChild(sWrap);inp.addEventListener('input',()=>{const q=inp.value.trim();let c=0;[...body.querySelectorAll('.json-mini-line')].forEach(line=>{if(!q){line.classList.remove('mark');return;}if(line.textContent.toLowerCase().includes(q.toLowerCase())){line.classList.add('mark');c++;}else line.classList.remove('mark');});count.textContent=c;});}
-      header.addEventListener('click',e=>{if(e.target!==btnCopy && e.target.tagName!=='INPUT' && e.target!==btnWrap){card.classList.toggle('collapsed');}});
-      const body=document.createElement('div');body.className='detail-card-body';if(!data|| (Array.isArray(data)&&!data.length) || (typeof data==='object'&&!Array.isArray(data)&&!Object.keys(data||{}).length)){const empty=document.createElement('div');empty.className='empty-hint';empty.textContent=t('empty');body.appendChild(empty);} else {const container=document.createElement('div');container.className='json-mini-container';container.appendChild(buildMiniJson(data));body.appendChild(container);}btnCopy.onclick=e=>{e.stopPropagation();navigator.clipboard.writeText(JSON.stringify(data,null,2));btnCopy.textContent=t('copied');setTimeout(()=>btnCopy.textContent=t('copy'),1200);};card.append(header,body);syncWrap();return card;}
-    function buildEditableCard(title,data,stepObj,key,opts={}){const edited=!!stepObj['edited_'+key];const card=buildCard(title,data,opts);if(edited)card.classList.add('edited');const header=card.querySelector('.detail-card-header');if(edited){const badge=document.createElement('span');badge.className='badge';badge.textContent=t('edited');header.insertBefore(badge,header.querySelector('.count'));}const editBtn=document.createElement('button');editBtn.textContent=t('edit');header.insertBefore(editBtn,header.querySelector('button'));const body=card.querySelector('.detail-card-body');editBtn.onclick=e=>{e.stopPropagation();if(body.querySelector('textarea'))return;body.innerHTML='';const toolbar=document.createElement('div');toolbar.className='detail-toolbar';const save=document.createElement('button');save.textContent=t('save');save.className='primary';const fmt=document.createElement('button');fmt.textContent=t('format');const cancel=document.createElement('button');cancel.textContent=t('back');toolbar.append(save,fmt,cancel);const ta=document.createElement('textarea');ta.style.width='100%';ta.style.minHeight='240px';ta.style.fontFamily='ui-monospace,monospace';ta.style.fontSize='.68rem';ta.style.background='#0f1215';ta.style.color='#d7e2ec';ta.value=JSON.stringify(stepObj['edited_'+key]||data,null,2);body.append(toolbar,ta);const status=document.createElement('div');status.style.fontSize='.55rem';status.style.color='var(--muted)';status.textContent=t('edit')+' '+title;body.appendChild(status);function validate(){try{const parsed=JSON.parse(ta.value);status.textContent=t('validJson')+' ('+(Array.isArray(parsed)?parsed.length+' items':Object.keys(parsed||{}).length+' keys')+')';status.style.color='#6fdd9b';ta.classList.remove('invalid');return true;}catch(err){status.textContent='ERR: '+err.message;status.style.color='#ff8b7b';ta.classList.add('invalid');return false;}}ta.addEventListener('input',validate);validate();fmt.onclick=()=>{try{const parsed=JSON.parse(ta.value);ta.value=JSON.stringify(parsed,null,2);validate();}catch(err){status.textContent='ERR: '+err.message;status.style.color='#ff8b7b';}};cancel.onclick=()=>{renderDetails(stepObj);};save.onclick=()=>{if(!validate())return;try{const parsed=JSON.parse(ta.value);stepObj['edited_'+key]=parsed;renderDetails(stepObj);}catch(err){status.textContent='ERR: '+err.message;status.style.color='#ff8b7b';}};};return card;}
-  function buildMiniJson(data){const wrap=document.createElement('div');const jsonStr=JSON.stringify(data,null,2);const lines=jsonStr.split('\n');lines.forEach((ln,i)=>{const line=document.createElement('div');line.className='json-mini-line';const escaped=escapeHtml(ln);const indentReplaced=escaped.replace(/^ +/,m=>m.replace(/ /g,'&nbsp;'));const highlighted=syntaxHighlight(indentReplaced);line.innerHTML='<span class="json-mini-ln">'+(i+1)+'</span>'+highlighted;wrap.appendChild(line);});return wrap;}
+  function deriveContent(msg){if(typeof msg.content==='string')return msg.content;if(Array.isArray(msg.content))return msg.content.map(c=>typeof c==='string'?c:JSON.stringify(c)).join('\n');if(msg.text)return msg.text; if(msg.message)return typeof msg.message==='string'?msg.message:JSON.stringify(msg.message);return JSON.stringify(msg,null,2);}
+
+  // Step Details Modal
+  let stepDetailsEditorInstance = null;
+  let stepDetailsOriginalData = null;
+  const stepDetailsSaveBtn = el('stepDetailsSave');
+  const stepDetailsResetBtn = el('stepDetailsReset');
+  const stepDetailsStatus = el('stepDetailsStatus');
+
+  function openStepDetailsModal() {
+    if (!state.currentFile) return;
+    const {steps} = state.files.get(state.currentFile);
+    const stepObj = steps[state.currentIndex];
+
+    stepDetailsModal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+
+    // Store original data
+    stepDetailsOriginalData = JSON.parse(JSON.stringify(stepObj));
+
+    // Clean up previous editor
+    if (stepDetailsEditorInstance) {
+      try { stepDetailsEditorInstance.destroy(); } catch(e) {}
+      stepDetailsEditorInstance = null;
+    }
+
+    stepDetailsEditor.innerHTML = '';
+    stepDetailsStatus.textContent = t('validJson');
+    stepDetailsStatus.className = 'editor-status ok';
+
+    if (window.createJSONEditor) {
+      try {
+        stepDetailsEditorInstance = window.createJSONEditor({
+          target: stepDetailsEditor,
+          props: {
+            content: { json: stepObj },
+            readOnly: false,
+            mode: 'tree',
+            mainMenuBar: true,
+            navigationBar: true,
+            statusBar: true,
+            onChange: (updatedContent, previousContent, { contentErrors }) => {
+              if (contentErrors) {
+                stepDetailsStatus.textContent = 'ERR: ' + (contentErrors.validationErrors?.[0]?.message || 'Invalid JSON');
+                stepDetailsStatus.className = 'editor-status err';
+              } else {
+                stepDetailsStatus.textContent = t('validJson');
+                stepDetailsStatus.className = 'editor-status ok';
+              }
+            }
+          }
+        });
+      } catch(e) {
+        console.error('Step Details Editor error:', e);
+        stepDetailsEditor.innerHTML = '<div style="padding:20px;color:var(--danger);">Failed to load editor</div>';
+      }
+    } else {
+      stepDetailsEditor.innerHTML = '<div style="padding:20px;color:var(--danger);">JSONEditor not loaded</div>';
+    }
+  }
+
+  function closeStepDetailsModal() {
+    stepDetailsModal.classList.remove('show');
+    document.body.style.overflow = '';
+
+    // Clean up editor
+    if (stepDetailsEditorInstance) {
+      try { stepDetailsEditorInstance.destroy(); } catch(e) {}
+      stepDetailsEditorInstance = null;
+    }
+    stepDetailsEditor.innerHTML = '';
+    stepDetailsOriginalData = null;
+  }
+
+  // Step Details button click
+  stepDetailsBtn.addEventListener('click', openStepDetailsModal);
+
+  // Save button - apply changes to current step
+  stepDetailsSaveBtn.addEventListener('click', async () => {
+    if (!stepDetailsEditorInstance || !state.currentFile) return;
+
+    try {
+      const content = await stepDetailsEditorInstance.get();
+      const {steps} = state.files.get(state.currentFile);
+
+      // Update the step object with edited data
+      Object.assign(steps[state.currentIndex], content.json);
+
+      stepDetailsStatus.textContent = t('copied');
+      stepDetailsStatus.className = 'editor-status ok';
+      setTimeout(() => {
+        stepDetailsStatus.textContent = t('validJson');
+      }, 1200);
+
+      // Re-render current view
+      render();
+    } catch(e) {
+      stepDetailsStatus.textContent = 'ERR: ' + e.message;
+      stepDetailsStatus.className = 'editor-status err';
+    }
+  });
+
+  // Reset button - restore original data
+  stepDetailsResetBtn.addEventListener('click', () => {
+    if (!stepDetailsEditorInstance || !stepDetailsOriginalData) return;
+
+    try {
+      stepDetailsEditorInstance.set({ json: stepDetailsOriginalData });
+      stepDetailsStatus.textContent = t('validJson');
+      stepDetailsStatus.className = 'editor-status ok';
+    } catch(e) {
+      stepDetailsStatus.textContent = 'ERR: ' + e.message;
+      stepDetailsStatus.className = 'editor-status err';
+    }
+  });
+
+  // Close modal on background click
+  stepDetailsModal.addEventListener('click', (e) => {
+    if (e.target === stepDetailsModal) {
+      closeStepDetailsModal();
+    }
+  });
+
+  // Close modal on close button click
+  document.querySelector('.step-details-close').addEventListener('click', closeStepDetailsModal);
+
+  // Close modal on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && stepDetailsModal.classList.contains('show')) {
+      closeStepDetailsModal();
+    }
+  });
   // --- Image preview overlay helpers ---
   let _imgOverlay=null,_imgOverlayImg=null;
   function ensurePreviewOverlay(){
@@ -598,7 +886,6 @@
     exportCurrent.onclick=()=>{if(!state.currentFile)return;const {steps}=state.files.get(state.currentFile);const stepObj=steps[state.currentIndex];const exp=buildExportStep(stepObj);const blob=new Blob([JSON.stringify(exp,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${state.currentFile.replace(/\.[^.]+$/, '')}_step_${state.currentIndex+1}.json`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(a.href);};
     exportTrajectory.onclick=()=>{if(!state.currentFile)return;const {steps}=state.files.get(state.currentFile);const lines=steps.map(s=>JSON.stringify(buildExportStep(s))).join('\n');const blob=new Blob([lines+'\n'],{type:'application/jsonl'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=state.currentFile.replace(/\.[^.]+$/, '')+'_edited.jsonl';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(a.href);};
     function buildExportStep(s){const base={...s};if(s.edited_input_messages)base.edited_input_messages=s.edited_input_messages; if(s.edited_output_messages)base.edited_output_messages=s.edited_output_messages; if(s.edited_tools)base.edited_tools=s.edited_tools; return base;}
-  collapseBar.addEventListener('click',()=>{const c=detailsEl.style.display==='none';detailsEl.style.display=c?'block':'none';collapseBar.classList.toggle('collapsed',!c);});detailsEl.style.display='none';collapseBar.classList.add('collapsed');
   // Drag & drop on unified fileArea
   ;['dragenter','dragover'].forEach(ev=>fileArea.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();fileArea.classList.add('dragover');}));
   ;['dragleave','drop'].forEach(ev=>fileArea.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();if(e.type==='drop'){const files=e.dataTransfer.files;if(files&&files.length){fileInput.files=files;enterCompact();loadSelectedFiles();}}fileArea.classList.remove('dragover');}));
