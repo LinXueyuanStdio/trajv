@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <title>Trajectory 浏览器</title>
+  <title>轨迹浏览器</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <!-- Favicon: prefer assets icon, fallback to media icon -->
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml" sizes="any">
@@ -57,7 +57,7 @@
   .mode-buttons button:disabled{opacity:.4;cursor:not-allowed;}
     .grow{flex:1 1 auto;} .status{font-size:.8rem; color:var(--muted);} .collapse-bar{background:var(--panel-alt); padding:.4rem .9rem; display:flex; gap:1rem; align-items:center; cursor:pointer; user-select:none; border-bottom:1px solid var(--border);} .collapse-bar h2{font-size:.8rem; margin:0; letter-spacing:.5px; font-weight:600;} .chevron{transition:transform .25s ease;} .collapsed .chevron{transform:rotate(-90deg);} #details{display:none; padding:.75rem .9rem; background:var(--panel-alt); border-bottom:1px solid var(--border);} pre{margin:0; font-family:ui-monospace,SFMono-Regular,Monaco,Menlo,Consolas,"Liberation Mono",monospace; font-size:.75rem; line-height:1.3; background:#111a; padding:.5rem .6rem; border:1px solid #444a; border-radius:4px; overflow:auto; max-height:320px;}
     code.json-key{color:#8ab4f8;} code.json-string{color:#98c379;} code.json-number{color:#d19a66;} code.json-boolean{color:#56b6c2;} code.json-null{color:#c678dd;}
-    main{flex:1 1 auto; display:flex;} .columns{display:flex; gap:1rem; padding:1rem; width:100%;} .col{flex:1 1 50%; display:flex; flex-direction:column; gap:.75rem;} .panel-header{display:flex; gap:.5rem; align-items:center; margin:0 0 .5rem;} .panel-title{font-size:.75rem; font-weight:600; letter-spacing:.5px; margin:0; color:var(--muted); text-transform:uppercase;} .mode-select{font-size:.7rem; padding:.25rem .4rem;}
+    main{flex:1 1 auto; display:flex; min-height:0;} .columns{display:flex; gap:1rem; padding:1rem; width:100%; min-height:0; flex:1;} .col{flex:1 1 50%; display:flex; flex-direction:column; gap:.75rem; min-height:0;} .panel-header{display:flex; gap:.5rem; align-items:center; margin:0 0 .5rem;} .panel-title{font-size:.75rem; font-weight:600; letter-spacing:.5px; margin:0; color:var(--muted); text-transform:uppercase;} .mode-select{font-size:.7rem; padding:.25rem .4rem;}
   .message{border:1px solid var(--border); background:var(--panel); padding:.4rem .55rem .55rem; border-radius:6px; display:flex; flex-direction:column; gap:.25rem;}
   .message.answer{box-shadow:0 0 0 1px var(--accent) inset;}
   .msg-header{display:flex; align-items:center; gap:.5rem; font-size:.65rem; letter-spacing:.5px; text-transform:uppercase; color:var(--muted); cursor:pointer; user-select:none;}
@@ -122,7 +122,7 @@
   .json-mini-ln{opacity:.35;user-select:none;width:2.3em;display:inline-block;text-align:right;margin-right:.45em;}
   .empty-hint{font-size:.55rem;color:var(--muted);padding:.15rem 0;}
   @media (max-width:900px){.detail-panels{grid-template-columns:repeat(auto-fit,minmax(240px,1fr));padding:.5rem .5rem .6rem;}}
-  .edit-box{border:1px solid var(--border); background:#181b20; border-radius:6px; display:flex; flex-direction:column;}
+  .edit-box{border:1px solid var(--border); background:#181b20; border-radius:6px; display:flex; flex-direction:column; flex:1; min-height:0;}
   .editor-toolbar{display:flex; flex-wrap:wrap; gap:.4rem; padding:.45rem .6rem; background:#20252b; border-bottom:1px solid var(--border); align-items:center;}
   .editor-toolbar button{font-size:.65rem; padding:.3rem .55rem;}
   .editor-toolbar .info{margin-left:auto; font-size:.55rem; letter-spacing:.5px; color:var(--muted); display:flex; gap:.65rem; align-items:center;}
@@ -141,7 +141,7 @@
   .part-line img{max-width:180px; border:1px solid var(--border); border-radius:4px; background:#000;}
   .part-text a{color:#4da3ff; text-decoration:underline;}
   .msg-line a{color:#4da3ff; text-decoration:underline;}
-  .toolbar{display:flex; gap:.4rem; align-items:center;} .tag{background:var(--panel-alt); border:1px solid var(--border); padding:.15rem .4rem; border-radius:999px; font-size:.6rem; letter-spacing:.5px;} .two-col-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:.75rem; margin-top:.5rem;} .highlight-answer{background:var(--accent); color:#fff;} .nav-group{display:flex; gap:.4rem; align-items:center;} .jump-input{width:70px;} #dropzone{border:2px dashed var(--border); margin:.25rem 1rem 0; padding:.75rem; text-align:center; font-size:.8rem; color:var(--muted); border-radius:6px;} #dropzone.dragover{border-color:var(--accent); color:var(--accent); background:#1b283b;} .footer{padding:.5rem .75rem; font-size:.65rem; text-align:right; color:var(--muted); border-top:1px solid var(--border);} .edited-flag{color:var(--accent);} @media (max-width:1100px){.columns{flex-direction:column;}}
+  .toolbar{display:flex; gap:.4rem; align-items:center;} .tag{background:var(--panel-alt); border:1px solid var(--border); padding:.15rem .4rem; border-radius:999px; font-size:.6rem; letter-spacing:.5px;} .two-col-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:.75rem; margin-top:.5rem;} .highlight-answer{background:var(--accent); color:#fff;} .nav-group{display:flex; gap:.4rem; align-items:center;} .jump-input{width:auto; min-width:40px; max-width:80px;} #dropzone{border:2px dashed var(--border); margin:.25rem 1rem 0; padding:.75rem; text-align:center; font-size:.8rem; color:var(--muted); border-radius:6px;} #dropzone.dragover{border-color:var(--accent); color:var(--accent); background:#1b283b;} .footer{padding:.5rem .75rem; font-size:.65rem; text-align:right; color:var(--muted); border-top:1px solid var(--border);} .edited-flag{color:var(--accent);} @media (max-width:1100px){.columns{flex-direction:column;}}
   /* Equal columns & wrapping adjustments */
   .columns{align-items:stretch;}
   .col{min-width:0;}
@@ -254,7 +254,7 @@
 </head>
 <body>
   <header>
-    <h1 id="titleText">Trajectory 浏览器</h1>
+    <h1 id="titleText">轨迹浏览器</h1>
     <div id="fileArea" class="file-area">
       <div class="file-actions">
         <input type="file" id="fileInput" multiple accept=".jsonl" style="display:none" />
@@ -271,7 +271,6 @@
       <span id="totalSteps">/ 0</span><button id="nextStep" disabled>&gt;</button><button id="lastStep" disabled>&gt;&gt;</button>
     </div>
     <div class="toolbar">
-      <button id="stepDetailsBtn" disabled>Step Details</button>
       <button id="exportCurrent" disabled>导出当前 Step</button>
       <button id="exportTrajectory" disabled>导出轨迹</button>
       <select id="langSelect" title="Language">
@@ -290,11 +289,14 @@
   <main>
     <div class="columns">
       <div class="col" id="inputCol">
-        <div class="panel-header"><h3 class="panel-title" id="inputPanelTitle">Input Messages</h3>
+        <div class="panel-header">
+          <h3 class="panel-title" id="inputPanelTitle">Input Messages</h3>
           <div id="inputModeBtns" class="mode-buttons" data-target="input">
             <button data-mode="rich" class="active" data-i18n="mode.rich">美化视图</button>
             <button data-mode="edit" data-i18n="mode.edit">编辑</button>
           </div>
+          <div style="flex:1"></div>
+          <button id="stepDetailsBtn" disabled style="font-size:.7rem;padding:.3rem .6rem;">Step Details</button>
         </div>
         <div id="inputMessages"></div>
       </div>
@@ -364,7 +366,7 @@
     function exitCompact(){fileArea.classList.remove('compact'); if(fileHint) fileHint.style.display='';}
 
     const I18N={
-  zh:{title:'Trajectory 浏览器',load:'载入',selectFolder:'选择文件夹',selectFiles:'选择文件',hint:'拖拽 JSONL 文件到此处 或 点击按钮选择',skipInfo:'已读取: {loaded} 个，跳过非 JSONL: {skipped} 个',notLoaded:'未加载文件',dragDrop:'拖拽 JSONL 文件到此处 或 使用上方文件选择',step:'Step',stepDetails:'步骤详情',highlight:'高亮答案',unhighlight:'取消高亮',exportCurrent:'导出当前 Step',exportTrajectory:'导出轨迹',inputMessages:'Input Messages',outputMessages:'Output Messages',mode:{rich:'美化视图',edit:'编辑'},copy:'复制',copied:'已复制',fold:'折叠',expandStructure:'展开结构',expandAll:'展开',collapseAll:'全部折叠',searchPlaceholder:'搜索...',wrapOn:'自适应换行',wrapOff:'横向滚动',edit:'编辑',edited:'已编辑',empty:'(空)',tools:'Tools',inferenceArgs:'Inference Args',meta:'Meta',originalStep:'原始 Step JSON',save:'保存',format:'格式化',fullscreen:'全屏',restore:'还原',reset:'恢复原始',back:'返回',diff:'对比',hideDiff:'隐藏对比',validJson:'有效 JSON',invalidRootArray:'根必须是数组',editingArray:'编辑 JSON 数组: message 列表',escHint:'ESC 取消 / Ctrl+S 保存',parseFailed:'解析失败: ',loadingParsing:'解析文件...',zoom:'放大',previewTitle:'图片预览',close:'关闭'},
+  zh:{title:'轨迹浏览器',load:'载入',selectFolder:'选择文件夹',selectFiles:'选择文件',hint:'拖拽 JSONL 文件到此处 或 点击按钮选择',skipInfo:'已读取: {loaded} 个，跳过非 JSONL: {skipped} 个',notLoaded:'未加载文件',dragDrop:'拖拽 JSONL 文件到此处 或 使用上方文件选择',step:'步骤',stepDetails:'步骤详情',highlight:'高亮答案',unhighlight:'取消高亮',exportCurrent:'导出当前步骤',exportTrajectory:'导出轨迹',inputMessages:'输入消息',outputMessages:'输出消息',mode:{rich:'美化视图',edit:'编辑'},copy:'复制',copied:'已复制',fold:'折叠',expandStructure:'展开结构',expandAll:'展开',collapseAll:'全部折叠',searchPlaceholder:'搜索...',wrapOn:'自适应换行',wrapOff:'横向滚动',edit:'编辑',edited:'已编辑',empty:'(空)',tools:'Tools',inferenceArgs:'Inference Args',meta:'Meta',originalStep:'原始 Step JSON',save:'保存',format:'格式化',fullscreen:'全屏',restore:'还原',reset:'恢复原始',back:'返回',diff:'对比',hideDiff:'隐藏对比',validJson:'有效 JSON',invalidRootArray:'根必须是数组',editingArray:'编辑 JSON 数组: message 列表',escHint:'ESC 取消 / Ctrl+S 保存',parseFailed:'解析失败: ',loadingParsing:'解析文件...',zoom:'放大',previewTitle:'图片预览',close:'关闭'},
   en:{title:'Trajectory Browser',load:'Load',selectFolder:'Select Folder',selectFiles:'Select Files',hint:'Drag JSONL files here or click buttons',skipInfo:'Loaded: {loaded}, skipped non-JSONL: {skipped}',notLoaded:'No file loaded',dragDrop:'Drag JSONL files here or use selectors above',step:'Step',stepDetails:'Step Details',highlight:'Highlight Answer',unhighlight:'Unhighlight',exportCurrent:'Export Current Step',exportTrajectory:'Export Trajectory',inputMessages:'Input Messages',outputMessages:'Output Messages',mode:{rich:'Rich View',edit:'Edit'},copy:'Copy',copied:'Copied',fold:'Fold',expandStructure:'Expand Structure',expandAll:'Expand',collapseAll:'Collapse All',searchPlaceholder:'Search...',wrapOn:'Wrap',wrapOff:'Horizontal',edit:'Edit',edited:'Edited',empty:'(empty)',tools:'Tools',inferenceArgs:'Inference Args',meta:'Meta',originalStep:'Raw Step JSON',save:'Save',format:'Format',fullscreen:'Fullscreen',restore:'Restore',reset:'Reset',back:'Back',diff:'Diff',hideDiff:'Hide Diff',validJson:'Valid JSON',invalidRootArray:'Root must be an array',editingArray:'Edit JSON array: messages list',escHint:'ESC Cancel / Ctrl+S Save',parseFailed:'Parse failed: ',loadingParsing:'Parsing files...',zoom:'Zoom',previewTitle:'Image Preview',close:'Close'}
   };
   // i18n additions for image preview (non-breaking augment)
@@ -488,7 +490,10 @@
     trajectorySelect.addEventListener('change',()=>{state.currentFile=trajectorySelect.value;state.currentIndex=0;render();});
   function clearDisplay(){inputMessagesEl.innerHTML='';outputMessagesEl.innerHTML='';totalSteps.textContent='/ 0';[firstStep,prevStep,nextStep,lastStep,jumpStep,exportCurrent,exportTrajectory,stepDetailsBtn].forEach(b=>b.disabled=true);disableModeButtons(true);}
   function disableModeButtons(disabled){document.querySelectorAll('.mode-buttons button').forEach(b=>b.disabled=disabled);}
-    function render(){if(!state.currentFile){clearDisplay();applyLangStatic();return;}const {steps}=state.files.get(state.currentFile);const total=steps.length;if(!total){clearDisplay();applyLangStatic();return;}state.currentIndex=Math.min(Math.max(0,state.currentIndex),total-1);const stepObj=steps[state.currentIndex];totalSteps.textContent='/ '+total;jumpStep.disabled=false;jumpStep.value=state.currentIndex+1;[firstStep,prevStep,nextStep,lastStep,exportCurrent,exportTrajectory,stepDetailsBtn].forEach(b=>b.disabled=false);disableModeButtons(false);firstStep.disabled=prevStep.disabled=state.currentIndex===0;lastStep.disabled=nextStep.disabled=state.currentIndex===total-1;renderMessages(stepObj);updateModeButtonsUI();}applyLangStatic();
+    function render(){if(!state.currentFile){clearDisplay();applyLangStatic();return;}const {steps}=state.files.get(state.currentFile);const total=steps.length;if(!total){clearDisplay();applyLangStatic();return;}state.currentIndex=Math.min(Math.max(0,state.currentIndex),total-1);const stepObj=steps[state.currentIndex];totalSteps.textContent='/ '+total;jumpStep.disabled=false;jumpStep.value=state.currentIndex+1;[firstStep,prevStep,nextStep,lastStep,exportCurrent,exportTrajectory,stepDetailsBtn].forEach(b=>b.disabled=false);disableModeButtons(false);firstStep.disabled=prevStep.disabled=state.currentIndex===0;lastStep.disabled=nextStep.disabled=state.currentIndex===total-1;renderMessages(stepObj);updateModeButtonsUI();}
+  // Initialize page - disable mode buttons initially
+  disableModeButtons(true);
+  applyLangStatic();
     function renderMessages(stepObj){
       const inList=stepObj.edited_input_messages||stepObj.input_messages||[];
       const outList=stepObj.edited_output_messages||stepObj.output_messages||[];
@@ -555,7 +560,8 @@
 
     // Create container for the editor
     const editorContainer=document.createElement('div');
-    editorContainer.style.height='500px';
+    editorContainer.style.flex='1';
+    editorContainer.style.minHeight='0';
     editorContainer.style.border='1px solid var(--border)';
     box.appendChild(editorContainer);
 
@@ -590,6 +596,7 @@
             askToFormat: false,
             escapeControlCharacters: false,
             escapeUnicodeCharacters: false,
+            className: 'jse-theme-dark',
             onChange: (updatedContent, previousContent, { contentErrors, patchResult }) => {
               if (contentErrors) {
                 statusSpan.textContent = 'ERR: ' + (contentErrors.validationErrors?.[0]?.message || 'Invalid JSON');
@@ -742,6 +749,7 @@
             mainMenuBar: true,
             navigationBar: true,
             statusBar: true,
+            className: 'jse-theme-dark',
             onChange: (updatedContent, previousContent, { contentErrors }) => {
               if (contentErrors) {
                 stepDetailsStatus.textContent = 'ERR: ' + (contentErrors.validationErrors?.[0]?.message || 'Invalid JSON');
