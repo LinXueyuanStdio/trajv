@@ -141,7 +141,7 @@
   .part-line img{max-width:180px; border:1px solid var(--border); border-radius:4px; background:#000;}
   .part-text a{color:#4da3ff; text-decoration:underline;}
   .msg-line a{color:#4da3ff; text-decoration:underline;}
-  .toolbar{display:flex; gap:.4rem; align-items:center;} .tag{background:var(--panel-alt); border:1px solid var(--border); padding:.15rem .4rem; border-radius:999px; font-size:.6rem; letter-spacing:.5px;} .two-col-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:.75rem; margin-top:.5rem;} .highlight-answer{background:var(--accent); color:#fff;} .nav-group{display:flex; gap:.4rem; align-items:center;} .jump-input{width:auto; min-width:40px; max-width:80px;} #dropzone{border:2px dashed var(--border); margin:.25rem 1rem 0; padding:.75rem; text-align:center; font-size:.8rem; color:var(--muted); border-radius:6px;} #dropzone.dragover{border-color:var(--accent); color:var(--accent); background:#1b283b;} .footer{padding:.5rem .75rem; font-size:.65rem; text-align:right; color:var(--muted); border-top:1px solid var(--border);} .edited-flag{color:var(--accent);} @media (max-width:1100px){.columns{flex-direction:column;}}
+  .toolbar{display:flex; gap:.4rem; align-items:center;} .tag{background:var(--panel-alt); border:1px solid var(--border); padding:.15rem .4rem; border-radius:999px; font-size:.6rem; letter-spacing:.5px;} .two-col-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:.75rem; margin-top:.5rem;} .highlight-answer{background:var(--accent); color:#fff;} .nav-group{display:flex; gap:.4rem; align-items:center;} .jump-input{width:3ch; min-width:3ch; max-width:5ch; padding:.35rem .25rem; text-align:center;} #dropzone{border:2px dashed var(--border); margin:.25rem 1rem 0; padding:.75rem; text-align:center; font-size:.8rem; color:var(--muted); border-radius:6px;} #dropzone.dragover{border-color:var(--accent); color:var(--accent); background:#1b283b;} .footer{padding:.5rem .75rem; font-size:.65rem; text-align:right; color:var(--muted); border-top:1px solid var(--border);} .edited-flag{color:var(--accent);} @media (max-width:1100px){.columns{flex-direction:column;}}
   /* Equal columns & wrapping adjustments */
   .columns{align-items:stretch;}
   .col{min-width:0;}
@@ -271,7 +271,7 @@
       <span id="totalSteps">/ 0</span><button id="nextStep" disabled>&gt;</button><button id="lastStep" disabled>&gt;&gt;</button>
     </div>
     <div class="toolbar">
-      <button id="exportCurrent" disabled>导出当前 Step</button>
+      <button id="exportCurrent" disabled>导出当前步骤</button>
       <button id="exportTrajectory" disabled>导出轨迹</button>
       <select id="langSelect" title="Language">
         <option value="zh">中文</option>
@@ -296,7 +296,7 @@
             <button data-mode="edit" data-i18n="mode.edit">编辑</button>
           </div>
           <div style="flex:1"></div>
-          <button id="stepDetailsBtn" disabled style="font-size:.7rem;padding:.3rem .6rem;">Step Details</button>
+          <button id="stepDetailsBtn" disabled style="font-size:.7rem;padding:.3rem .6rem;" data-i18n="stepDetails">步骤详情</button>
         </div>
         <div id="inputMessages"></div>
       </div>
@@ -317,7 +317,7 @@
     <div class="step-details-window">
       <div class="step-details-titlebar">
         <span class="step-details-close" title="Close"></span>
-        <div class="title">Step Details - Raw JSON</div>
+        <div class="title" id="stepDetailsModalTitle">步骤详情 - Raw JSON</div>
       </div>
       <div class="step-details-toolbar">
         <button id="stepDetailsSave" class="primary">保存</button>
@@ -366,14 +366,14 @@
     function exitCompact(){fileArea.classList.remove('compact'); if(fileHint) fileHint.style.display='';}
 
     const I18N={
-  zh:{title:'轨迹浏览器',load:'载入',selectFolder:'选择文件夹',selectFiles:'选择文件',hint:'拖拽 JSONL 文件到此处 或 点击按钮选择',skipInfo:'已读取: {loaded} 个，跳过非 JSONL: {skipped} 个',notLoaded:'未加载文件',dragDrop:'拖拽 JSONL 文件到此处 或 使用上方文件选择',step:'步骤',stepDetails:'步骤详情',highlight:'高亮答案',unhighlight:'取消高亮',exportCurrent:'导出当前步骤',exportTrajectory:'导出轨迹',inputMessages:'输入消息',outputMessages:'输出消息',mode:{rich:'美化视图',edit:'编辑'},copy:'复制',copied:'已复制',fold:'折叠',expandStructure:'展开结构',expandAll:'展开',collapseAll:'全部折叠',searchPlaceholder:'搜索...',wrapOn:'自适应换行',wrapOff:'横向滚动',edit:'编辑',edited:'已编辑',empty:'(空)',tools:'Tools',inferenceArgs:'Inference Args',meta:'Meta',originalStep:'原始 Step JSON',save:'保存',format:'格式化',fullscreen:'全屏',restore:'还原',reset:'恢复原始',back:'返回',diff:'对比',hideDiff:'隐藏对比',validJson:'有效 JSON',invalidRootArray:'根必须是数组',editingArray:'编辑 JSON 数组: message 列表',escHint:'ESC 取消 / Ctrl+S 保存',parseFailed:'解析失败: ',loadingParsing:'解析文件...',zoom:'放大',previewTitle:'图片预览',close:'关闭'},
-  en:{title:'Trajectory Browser',load:'Load',selectFolder:'Select Folder',selectFiles:'Select Files',hint:'Drag JSONL files here or click buttons',skipInfo:'Loaded: {loaded}, skipped non-JSONL: {skipped}',notLoaded:'No file loaded',dragDrop:'Drag JSONL files here or use selectors above',step:'Step',stepDetails:'Step Details',highlight:'Highlight Answer',unhighlight:'Unhighlight',exportCurrent:'Export Current Step',exportTrajectory:'Export Trajectory',inputMessages:'Input Messages',outputMessages:'Output Messages',mode:{rich:'Rich View',edit:'Edit'},copy:'Copy',copied:'Copied',fold:'Fold',expandStructure:'Expand Structure',expandAll:'Expand',collapseAll:'Collapse All',searchPlaceholder:'Search...',wrapOn:'Wrap',wrapOff:'Horizontal',edit:'Edit',edited:'Edited',empty:'(empty)',tools:'Tools',inferenceArgs:'Inference Args',meta:'Meta',originalStep:'Raw Step JSON',save:'Save',format:'Format',fullscreen:'Fullscreen',restore:'Restore',reset:'Reset',back:'Back',diff:'Diff',hideDiff:'Hide Diff',validJson:'Valid JSON',invalidRootArray:'Root must be an array',editingArray:'Edit JSON array: messages list',escHint:'ESC Cancel / Ctrl+S Save',parseFailed:'Parse failed: ',loadingParsing:'Parsing files...',zoom:'Zoom',previewTitle:'Image Preview',close:'Close'}
+  zh:{title:'轨迹浏览器',load:'载入',selectFolder:'选择文件夹',selectFiles:'选择文件',hint:'拖拽 JSONL 文件到此处 或 点击按钮选择',skipInfo:'已读取: {loaded} 个，跳过非 JSONL: {skipped} 个',notLoaded:'未加载文件',dragDrop:'拖拽 JSONL 文件到此处 或 使用上方文件选择',step:'步骤',stepDetails:'步骤详情',stepDetailsModalTitle:'步骤详情 - 原始 JSON',highlight:'高亮答案',unhighlight:'取消高亮',exportCurrent:'导出当前步骤',exportTrajectory:'导出轨迹',inputMessages:'输入消息',outputMessages:'输出消息',mode:{rich:'美化视图',edit:'编辑'},copy:'复制',copied:'已复制',fold:'折叠',expandStructure:'展开结构',expandAll:'展开',collapseAll:'全部折叠',searchPlaceholder:'搜索...',wrapOn:'自适应换行',wrapOff:'横向滚动',edit:'编辑',edited:'已编辑',empty:'(空)',tools:'Tools',inferenceArgs:'Inference Args',meta:'Meta',originalStep:'原始 Step JSON',save:'保存',format:'格式化',fullscreen:'全屏',restore:'还原',reset:'恢复原始',back:'返回',diff:'对比',hideDiff:'隐藏对比',validJson:'有效 JSON',invalidRootArray:'根必须是数组',editingArray:'编辑 JSON 数组: message 列表',escHint:'ESC 取消 / Ctrl+S 保存',parseFailed:'解析失败: ',loadingParsing:'解析文件...',zoom:'放大',previewTitle:'图片预览',close:'关闭'},
+  en:{title:'Trajectory Browser',load:'Load',selectFolder:'Select Folder',selectFiles:'Select Files',hint:'Drag JSONL files here or click buttons',skipInfo:'Loaded: {loaded}, skipped non-JSONL: {skipped}',notLoaded:'No file loaded',dragDrop:'Drag JSONL files here or use selectors above',step:'Step',stepDetails:'Step Details',stepDetailsModalTitle:'Step Details - Raw JSON',highlight:'Highlight Answer',unhighlight:'Unhighlight',exportCurrent:'Export Current Step',exportTrajectory:'Export Trajectory',inputMessages:'Input Messages',outputMessages:'Output Messages',mode:{rich:'Rich View',edit:'Edit'},copy:'Copy',copied:'Copied',fold:'Fold',expandStructure:'Expand Structure',expandAll:'Expand',collapseAll:'Collapse All',searchPlaceholder:'Search...',wrapOn:'Wrap',wrapOff:'Horizontal',edit:'Edit',edited:'Edited',empty:'(empty)',tools:'Tools',inferenceArgs:'Inference Args',meta:'Meta',originalStep:'Raw Step JSON',save:'Save',format:'Format',fullscreen:'Fullscreen',restore:'Restore',reset:'Reset',back:'Back',diff:'Diff',hideDiff:'Hide Diff',validJson:'Valid JSON',invalidRootArray:'Root must be an array',editingArray:'Edit JSON array: messages list',escHint:'ESC Cancel / Ctrl+S Save',parseFailed:'Parse failed: ',loadingParsing:'Parsing files...',zoom:'Zoom',previewTitle:'Image Preview',close:'Close'}
   };
   // i18n additions for image preview (non-breaking augment)
   if(!I18N.zh.zoom){ try{ Object.assign(I18N.zh, { zoom:'放大', previewTitle:'图片预览', close:'关闭' }); }catch(e){} }
   if(!I18N.en.zoom){ try{ Object.assign(I18N.en, { zoom:'Zoom', previewTitle:'Image Preview', close:'Close' }); }catch(e){} }
   function t(k){const lang=I18N[state.lang]||I18N.zh;return k.split('.').reduce((o,p)=>o&&o[p],lang)||k;}
-  function applyLangStatic(){titleText.textContent=t('title');folderBtn.textContent=t('selectFolder');selectFilesBtn.textContent=t('selectFiles');fileHint.textContent=t('hint');if(!state.files.size){statusEl.textContent=t('notLoaded');statusEl.style.display='';}stepLabel.textContent=t('step');stepDetailsBtn.textContent=t('stepDetails');inputPanelTitle.textContent=t('inputMessages');outputPanelTitle.textContent=t('outputMessages');
+  function applyLangStatic(){titleText.textContent=t('title');folderBtn.textContent=t('selectFolder');selectFilesBtn.textContent=t('selectFiles');fileHint.textContent=t('hint');if(!state.files.size){statusEl.textContent=t('notLoaded');statusEl.style.display='';}stepLabel.textContent=t('step');stepDetailsBtn.textContent=t('stepDetails');const modalTitle=document.getElementById('stepDetailsModalTitle');if(modalTitle)modalTitle.textContent=t('stepDetailsModalTitle');inputPanelTitle.textContent=t('inputMessages');outputPanelTitle.textContent=t('outputMessages');
     // update mode buttons text
     document.querySelectorAll('.mode-buttons button').forEach(btn=>{const key=btn.getAttribute('data-i18n');if(key)btn.textContent=t(key);});
   exportCurrent.textContent=t('exportCurrent');exportTrajectory.textContent=t('exportTrajectory');
@@ -898,6 +898,193 @@
   ;['dragenter','dragover'].forEach(ev=>fileArea.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();fileArea.classList.add('dragover');}));
   ;['dragleave','drop'].forEach(ev=>fileArea.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();if(e.type==='drop'){const files=e.dataTransfer.files;if(files&&files.length){fileInput.files=files;enterCompact();loadSelectedFiles();}}fileArea.classList.remove('dragover');}));
     function parseJSONL(text){const lines=text.split(/\r?\n/).filter(l=>l.trim().length);const steps=[];for(let i=0;i<lines.length;i++){const line=lines[i];try{const obj=JSON.parse(line);const inference=obj.inference_args||obj.inferenceArgs||{};let tools=obj.tools||[];if((!tools||!tools.length)&&inference&&Array.isArray(inference.tools)&&inference.tools.length)tools=inference.tools;const stepObj={url:obj.url||'',input_messages:obj.input_messages||obj.inputMessages||[],output_messages:obj.output_messages||obj.outputMessages||[],inference_args:inference,tools:tools||[],is_answer:obj.is_answer||obj.isAnswer||false,turn:obj.turn??0,step:obj.step??i,meta:obj.meta||{}};if(obj.edited_input_messages)stepObj.edited_input_messages=obj.edited_input_messages;if(obj.edited_output_messages)stepObj.edited_output_messages=obj.edited_output_messages;if(obj.edited_tools)stepObj.edited_tools=obj.edited_tools;steps.push(stepObj);}catch(e){console.warn('跳过无效 JSON 行',i+1,e);} }return {steps,rawLines:lines};}
+
+  // Load file from URL parameter (supports both remote URLs and local file:// paths)
+  async function loadFileFromUrl(url, retryCount = 0) {
+    try {
+      const isLocalFile = url.startsWith('file://') || url.startsWith('/');
+      const displayUrl = isLocalFile ? url.replace('file://', '') : url;
+
+      console.log('[loadFileFromUrl] Loading:', url, 'retry:', retryCount);
+      setStatus(`正在加载文件: ${displayUrl}`, true);
+      statusEl.style.display = '';
+
+      let fetchUrl = url;
+
+      // For GitHub URLs, try multiple strategies
+      if (url.includes('github.com')) {
+        if (retryCount === 0) {
+          // Strategy 1: Convert to jsdelivr CDN
+          const githubMatch = url.match(/github\.com\/([^\/]+)\/([^\/]+)\/(?:blob|raw)\/(?:refs\/heads\/)?([^\/]+)\/(.+)/);
+          if (githubMatch) {
+            const [, user, repo, branch, path] = githubMatch;
+            fetchUrl = `https://cdn.jsdelivr.net/gh/${user}/${repo}@${branch}/${path}`;
+            console.log('[loadFileFromUrl] Using jsdelivr:', fetchUrl);
+            setStatus(`正在通过 jsdelivr CDN 加载...`, true);
+          }
+        } else if (retryCount === 1) {
+          // Strategy 2: Use raw.githubusercontent.com
+          const githubMatch = url.match(/github\.com\/([^\/]+)\/([^\/]+)\/(?:blob|raw)\/(?:refs\/heads\/)?([^\/]+)\/(.+)/);
+          if (githubMatch) {
+            const [, user, repo, branch, path] = githubMatch;
+            fetchUrl = `https://raw.githubusercontent.com/${user}/${repo}/${branch}/${path}`;
+            console.log('[loadFileFromUrl] Using raw.githubusercontent:', fetchUrl);
+            setStatus(`正在通过 raw.githubusercontent.com 加载...`, true);
+          }
+        } else if (retryCount === 2) {
+          // Strategy 3: Direct fetch with no-cors mode as last resort
+          fetchUrl = url.replace('/blob/', '/raw/');
+          console.log('[loadFileFromUrl] Direct raw fetch:', fetchUrl);
+          setStatus(`正在直接加载...`, true);
+        }
+      }
+
+      console.log('[loadFileFromUrl] Fetching:', fetchUrl);
+      const response = await fetch(fetchUrl, {
+        mode: 'cors',
+        cache: 'default'
+      });
+
+      console.log('[loadFileFromUrl] Response status:', response.status, response.statusText);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const blob = await response.blob();
+      console.log('[loadFileFromUrl] Blob size:', blob.size, 'type:', blob.type);
+
+      const filename = url.split('/').pop().split('?')[0] || 'loaded.rollout.jsonl';
+
+      // Create a File object from the blob
+      const file = new File([blob], filename, { type: 'application/jsonl' });
+
+      setStatus(`正在解析: ${filename}`, true);
+      const {steps} = await parseJSONLFile(file, (p) => {
+        setStatus(`解析 ${filename} … ${p.steps || 0} steps`, true);
+      });
+
+      console.log('[loadFileFromUrl] Parsed steps:', steps.length);
+      const mtime = Date.now();
+      state.files.set(filename, {steps, mtime});
+      state.currentFile = filename;
+
+      refreshFileSelect();
+      setStatus(`成功加载: ${filename} (${steps.length} steps)`, true);
+      setTimeout(() => {
+        statusEl.style.display = 'none';
+      }, 2000);
+      enterCompact();
+    } catch (e) {
+      console.error('[loadFileFromUrl] Error:', e);
+      const isLocalFile = url.startsWith('file://') || url.startsWith('/');
+      const isRemoteUrl = url.startsWith('http://') || url.startsWith('https://');
+
+      if (isLocalFile && (e.message.includes('Failed to fetch') || e.message.includes('NetworkError'))) {
+        setStatus(`⚠️ 浏览器安全限制：无法直接访问本地文件。请使用 HTTP 服务器访问此页面（如: python -m http.server 8000），然后使用相对路径或上方按钮选择文件。`, false);
+      } else if (isRemoteUrl && retryCount < 2 && url.includes('github.com')) {
+        // Retry with different strategy
+        console.log('[loadFileFromUrl] Retrying with strategy', retryCount + 1);
+        setStatus(`加载失败，尝试其他方法... (${retryCount + 1}/3)`, true);
+        setTimeout(() => loadFileFromUrl(url, retryCount + 1), 500);
+      } else if (isRemoteUrl && retryCount === 2 && url.includes('github.com')) {
+        // All strategies failed, show helpful message
+        const instructions = `
+⚠️ 无法加载远程 GitHub 文件（已尝试 3 种方法）
+错误: ${e.message}
+
+建议使用本地文件：
+1. 将文件下载到本地
+2. 使用页面上的"选择文件"按钮
+3. 或使用相对路径，例如: ?file_url=assets/sample.rollout.jsonl
+
+如果文件在仓库中：
+访问: http://localhost:8000/index.html?file_url=assets/sample.rollout.jsonl
+
+调试信息已输出到浏览器控制台（F12）
+        `.trim();
+        setStatus(instructions, false);
+        statusEl.style.whiteSpace = 'pre-wrap';
+      } else {
+        setStatus(`加载失败: ${e.message}。请查看浏览器控制台（F12）获取详细信息。`, false);
+      }
+    }
+  }
+
+  // Load local file using FileReader API (for absolute paths via HTTP)
+  async function loadLocalFileViaReader(absolutePath) {
+    // Show instructions since we can't directly read arbitrary files via HTTP
+    const instructions = `
+⚠️ 无法通过 HTTP 直接访问系统绝对路径文件。
+
+请使用以下方法之一：
+
+方法 1 - 使用相对路径（推荐）：
+在上层目录启动服务器，然后使用相对路径：
+  cd /Users/lxy/Documents/GitHub/LinXueyuanStdio
+  python -m http.server 8000
+
+访问: http://localhost:8000/trajv/index.html?file_url=agentlin/output/agents/document_agent/rollout/20251211/969fc34da75d48929a3261d0083d889c.rollout.jsonl
+
+方法 2 - 创建符号链接：
+  cd /Users/lxy/Documents/GitHub/LinXueyuanStdio/trajv
+  ln -s ../agentlin/output ./data
+
+访问: http://localhost:8000/index.html?file_url=data/agents/document_agent/rollout/20251211/969fc34da75d48929a3261d0083d889c.rollout.jsonl
+
+方法 3 - 使用文件选择按钮：
+直接点击页面上的"选择文件"按钮手动选择文件。
+    `.trim();
+
+    setStatus(instructions, false);
+    statusEl.style.display = '';
+    statusEl.style.whiteSpace = 'pre-wrap';
+    statusEl.style.fontSize = '0.75rem';
+    statusEl.style.lineHeight = '1.4';
+  }
+
+  // Check for file_url parameter on page load
+  (function checkUrlParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const fileUrl = urlParams.get('file_url');
+
+    if (fileUrl) {
+      // Decode URL in case it's encoded
+      let decodedUrl = decodeURIComponent(fileUrl);
+
+      // Check if accessing from file:// protocol
+      if (window.location.protocol === 'file:') {
+        const isLocalPath = decodedUrl.startsWith('file://') || decodedUrl.startsWith('/') || /^[a-zA-Z]:[\/\\]/.test(decodedUrl);
+        if (isLocalPath) {
+          setStatus(`⚠️ 请使用 HTTP 服务器访问此页面以加载本地文件。运行: python -m http.server 8000，然后访问 http://localhost:8000/index.html`, false);
+          statusEl.style.display = '';
+          exitCompact();
+          return;
+        }
+      }
+
+      // Handle local absolute paths when served via HTTP
+      if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+        // Strip file:// protocol if present
+        if (decodedUrl.startsWith('file://')) {
+          decodedUrl = decodedUrl.replace('file://', '');
+        }
+
+        // Check if it's an absolute path that won't work with simple HTTP server
+        if (decodedUrl.startsWith('/') && !decodedUrl.startsWith('//') && !decodedUrl.startsWith(window.location.pathname.split('/')[1])) {
+          // This is an absolute filesystem path, not a relative web path
+          loadLocalFileViaReader(decodedUrl);
+          return;
+        } else if (/^[a-zA-Z]:[\/\\]/.test(decodedUrl)) {
+          // Windows absolute path
+          loadLocalFileViaReader(decodedUrl);
+          return;
+        }
+      }
+
+      // For relative paths or remote URLs
+      loadFileFromUrl(decodedUrl);
+    }
+  })();
   </script>
 </body>
 </html>
