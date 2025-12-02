@@ -35,11 +35,72 @@ Trajectory Browser 是一个简洁高效的在线工具，专为可视化和浏�
 - 🧭 **多语言界面**：自动适配中英文界面。
 - 💡 **响应式设计**：适配桌面与移动端，界面美观现代。
 
-## 🛠️ 技术栈
 
-- **前端**：原生 HTML/CSS/JavaScript
-- **样式**：自定义 CSS，深色主题，响应式布局
-- **无依赖**：无需安装任何依赖，开箱即用
+## 🎯 支持的数据格式
+
+**JSONL**：每行一个 JSON 对象，常用于 RL/AI 轨迹。
+
+```json
+{
+	"input_messages": [
+		{"role": "system", "content": "你是一个助手。"},
+		{"role": "user", "content": "请帮我总结以下文档的主要内容。"},
+		{"role": "assistant", "content": "好的，请提供文档内容。"},
+		{"role": "user", "content": [
+			{"type": "text", "text": "文档内容的第一部分。"},
+			{"type": "image_url", "image_url": {"url": "https://example.com/image1.png"}},
+		]},
+	],
+	"output_messages": [
+		{
+			"role": "assistant",
+			"content": "<think>我要...</think>",
+			"tool_calls": [
+				{
+					"id": "chatcmpl-tool-82b6f0e95fe04bebb3d1028277485e7a",
+					"type": "function",
+					"function": {
+					  "name": "CodeInterpreter",
+					  "arguments": "{\"code\": \"document = AiDocument(\\\"example.pdf\\\")\\ndocument.display(  \"}"
+					}
+				}
+			]
+		}
+	],
+	...
+}
+```
+
+如果没有 "input_messages" 和 "output_messages" 字段，则退化为普通的 messages 格式，我们自动将最后一条消息作为输出，其余作为输入。
+
+```json
+{
+	"messages": [
+		{"role": "system", "content": "你是一个助手。"},
+		{"role": "user", "content": "请帮我总结以下文档的主要内容。"},
+		{"role": "assistant", "content": "好的，请提供文档内容。"},
+		{"role": "user", "content": [
+			{"type": "text", "text": "文档内容的第一部分。"},
+			{"type": "image_url", "image_url": {"url": "https://example.com/image1.png"}},
+		]},
+		{
+			"role": "assistant",
+			"content": "<think>我要...</think>",
+			"tool_calls": [
+				{
+					"id": "chatcmpl-tool-82b6f0e95fe04bebb3d1028277485e7a",
+					"type": "function",
+					"function": {
+					  "name": "CodeInterpreter",
+					  "arguments": "{\"code\": \"document = AiDocument(\\\"example.pdf\\\")\\ndocument.display(  \"}"
+					}
+				}
+			]
+		}
+	],
+	...
+}
+```
 
 ## 🚀 快速开始
 
@@ -75,11 +136,6 @@ Trajectory Browser 是一个简洁高效的在线工具，专为可视化和浏�
 3. **编辑与导出**：
 	- 可直接编辑 step 内容，支持格式化与恢复原始。
 	- 支持导出当前 step 或完整轨迹为 JSON 文件。
-
-## 🎯 支持的数据格式
-
-- **JSONL**：每行一个 JSON 对象，常用于 RL/AI 轨迹。
-- **JSON**：支持部分 JSON 文件（需为数组或对象）。
 
 ## 🔧 高级功能
 
