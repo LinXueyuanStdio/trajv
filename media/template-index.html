@@ -4,12 +4,26 @@
   <meta charset="UTF-8" />
   <title>轨迹浏览器</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <!-- Favicon for Webview: use bundled media icon (will be rewritten to webview URI) -->
+  <!-- Favicon: prefer assets icon, fallback to media icon -->
+  <link rel="icon" href="media/icon.svg" type="image/svg+xml" sizes="any">
   <link rel="icon" href="media/icon.png" type="image/png">
   <link rel="apple-touch-icon" href="media/icon.png">
+  <!-- Fallback to media icon if assets is unavailable -->
+  <link rel="alternate icon" href="media/icon.png" type="image/png">
+  <!-- svelte-jsoneditor CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/svelte-jsoneditor@0.23.8/themes/jse-theme-dark.css" rel="stylesheet">
   <style>
     /* VS Code editor-open scenario: pre-hide import UI to avoid flash */
     #fileArea, #trajectorySelect { display: none !important; }
+    /* svelte-jsoneditor custom theme integration */
+    .jse-theme-dark {
+      --jse-theme-color: var(--accent);
+      --jse-theme-color-highlight: var(--accent-hover);
+      --jse-background-color: var(--panel);
+      --jse-panel-background: var(--panel-alt);
+      --jse-text-color: var(--text);
+      --jse-text-color-inverse: var(--bg);
+    }
     :root { color-scheme: light dark; --bg:#1e1f22; --panel:#2a2d31; --panel-alt:#35393f; --border:#444c56; --accent:#3d82f6; --accent-hover:#1d5fd1; --danger:#d9534f; --text:#e6e6e6; --muted:#9aa0a6; font-family: system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif; }
     body { margin:0; background:var(--bg); color:var(--text); display:flex; flex-direction:column; min-height:100vh; }
     header { padding:.75rem 1rem; background:var(--panel); display:flex; flex-wrap:wrap; gap:.75rem; align-items:center; border-bottom:1px solid var(--border); }
@@ -129,7 +143,7 @@
   .part-line img{max-width:180px; border:1px solid var(--border); border-radius:4px; background:#000;}
   .part-text a{color:#4da3ff; text-decoration:underline;}
   .msg-line a{color:#4da3ff; text-decoration:underline;}
-  .toolbar{display:flex; gap:.4rem; align-items:center;} .tag{background:var(--panel-alt); border:1px solid var(--border); padding:.15rem .4rem; border-radius:999px; font-size:.6rem; letter-spacing:.5px;} .two-col-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:.75rem; margin-top:.5rem;} .highlight-answer{background:var(--accent); color:#fff;} .nav-group{display:flex; gap:.4rem; align-items:center;} .jump-input{width:3ch; min-width:3ch; max-width:5ch; padding:.35rem .25rem; text-align:center;} #dropzone{border:2px dashed var(--border); margin:.25rem 1rem 0; padding:.75rem; text-align:center; font-size:.8rem; color:var(--muted); border-radius:6px;} #dropzone.dragover{border-color:var(--accent); color:var(--accent); background:#1b283b;} .footer{padding:.5rem .75rem; font-size:.65rem; text-align:right; color:var(--muted); border-top:1px solid var(--border);} .edited-flag{color:var(--accent);} @media (max-width:1100px){.columns{flex-direction:column;}}
+  .toolbar{display:flex; gap:.4rem; align-items:center;} .tag{background:var(--panel-alt); border:1px solid var(--border); padding:.15rem .4rem; border-radius:999px; font-size:.6rem; letter-spacing:.5px;} .two-col-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:.75rem; margin-top:.5rem;} .highlight-answer{background:var(--accent); color:#fff;} .nav-group{display:flex; gap:.4rem; align-items:center;} .jump-input{width:5ch; min-width:5ch; max-width:7ch; padding:.35rem .25rem; text-align:center;} #dropzone{border:2px dashed var(--border); margin:.25rem 1rem 0; padding:.75rem; text-align:center; font-size:.8rem; color:var(--muted); border-radius:6px;} #dropzone.dragover{border-color:var(--accent); color:var(--accent); background:#1b283b;} .footer{padding:.5rem .75rem; font-size:.65rem; text-align:right; color:var(--muted); border-top:1px solid var(--border);} .edited-flag{color:var(--accent);} @media (max-width:1100px){.columns{flex-direction:column;}}
   /* Equal columns & wrapping adjustments */
   .columns{align-items:stretch;}
   .col{min-width:0;}
@@ -387,10 +401,26 @@
           const inference=obj.inference_args||obj.inferenceArgs||{};
           let tools=obj.tools||[];
           if((!tools||!tools.length)&&inference&&Array.isArray(inference.tools)&&inference.tools.length) tools=inference.tools;
+
+          // Handle messages field fallback logic
+          let inputMessages = obj.input_messages || obj.inputMessages || [];
+          let outputMessages = obj.output_messages || obj.outputMessages || [];
+
+          // If no input_messages/output_messages, fall back to messages field
+          if (inputMessages.length === 0 && outputMessages.length === 0 && obj.messages && Array.isArray(obj.messages) && obj.messages.length > 0) {
+            // Last message is output, rest are input
+            if (obj.messages.length === 1) {
+              outputMessages = obj.messages;
+            } else {
+              inputMessages = obj.messages.slice(0, -1);
+              outputMessages = [obj.messages[obj.messages.length - 1]];
+            }
+          }
+
           const stepObj={
             url:obj.url||'',
-            input_messages:obj.input_messages||obj.inputMessages||[],
-            output_messages:obj.output_messages||obj.outputMessages||[],
+            input_messages:inputMessages,
+            output_messages:outputMessages,
             inference_args:inference,
             tools:tools||[],
             is_answer:obj.is_answer||obj.isAnswer||false,
@@ -514,7 +544,7 @@
   function initModeButtons(){['input','output'].forEach(kind=>{const root=el(kind==='input'?'inputModeBtns':'outputModeBtns');root.querySelectorAll('button').forEach(btn=>{btn.addEventListener('click',()=>{const mode=btn.dataset.mode; if(kind==='input'){state.inputMode=mode;} else {state.outputMode=mode;} updateModeButtonsUI(); render();});});});}
   initModeButtons();
 
-  // --- Build edit area using vanilla-jsoneditor ---
+  // --- Build edit area using svelte-jsoneditor ---
   function buildEditArea(stepObj,side){
     const eff=side==='input'?(stepObj.edited_input_messages||stepObj.input_messages||[]):(stepObj.edited_output_messages||stepObj.output_messages||[]);
     const original=side==='input'?(stepObj.input_messages||[]):(stepObj.output_messages||[]);
@@ -1008,16 +1038,16 @@
 
 方法 1 - 使用相对路径（推荐）：
 在上层目录启动服务器，然后使用相对路径：
-  cd /Users/lxy/Documents/GitHub/LinXueyuanStdio
+  cd /Users/lxy/Documents/GitHub/LinXueyuanStdio/trajv
   python -m http.server 8000
 
-访问: http://localhost:8000/trajv/index.html?file_url=agentlin/output/agents/document_agent/rollout/20251211/969fc34da75d48929a3261d0083d889c.rollout.jsonl
+访问: http://localhost:8000/trajv/index.html?file_url=output/969fc34da75d48929a3261d0083d889c.rollout.jsonl
 
 方法 2 - 创建符号链接：
   cd /Users/lxy/Documents/GitHub/LinXueyuanStdio/trajv
-  ln -s ../agentlin/output ./data
+  ln -s ../output ./data
 
-访问: http://localhost:8000/index.html?file_url=data/agents/document_agent/rollout/20251211/969fc34da75d48929a3261d0083d889c.rollout.jsonl
+访问: http://localhost:8000/index.html?file_url=data/969fc34da75d48929a3261d0083d889c.rollout.jsonl
 
 方法 3 - 使用文件选择按钮：
 直接点击页面上的"选择文件"按钮手动选择文件。
