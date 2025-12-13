@@ -57,7 +57,7 @@
   .mode-buttons button:hover{color:var(--text);background:#3a4047;border-color:#4a525d;}
   .mode-buttons button.active{background:var(--accent);border-color:var(--accent);color:#fff;}
   .mode-buttons button:disabled{opacity:.4;cursor:not-allowed;}
-    .grow{flex:1 1 auto;} .status{font-size:.8rem; color:var(--muted);} .collapse-bar{background:var(--panel-alt); padding:.4rem .9rem; display:flex; gap:1rem; align-items:center; cursor:pointer; user-select:none; border-bottom:1px solid var(--border);} .collapse-bar h2{font-size:.8rem; margin:0; letter-spacing:.5px; font-weight:600;} .chevron{transition:transform .25s ease;} .collapsed .chevron{transform:rotate(-90deg);} #details{display:none; padding:.75rem .9rem; background:var(--panel-alt); border-bottom:1px solid var(--border);} pre{margin:0; font-family:ui-monospace,SFMono-Regular,Monaco,Menlo,Consolas,"Liberation Mono",monospace; font-size:.75rem; line-height:1.3; background:#111a; padding:.5rem .6rem; border:1px solid #444a; border-radius:4px; overflow:auto; max-height:320px;}
+    .grow{display:none;} .header-right{margin-left:auto;display:flex;align-items:center;justify-content:flex-end;gap:.6rem;min-width:0;flex:999 1 420px;max-width:none;} .status{font-size:.8rem; color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;} .status.loaded-file{flex:1 1 auto;} .load-progress{width:min(340px,34vw);min-width:220px;display:flex;flex-direction:column;gap:3px;color:var(--muted);font-size:.66rem;} .load-progress[hidden]{display:none;} .load-progress-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);} .load-progress-meter{position:relative;height:16px;border-radius:4px;background:#1d2228;border:1px solid #0005;overflow:hidden;} .load-progress-meter>div{position:absolute;inset:0 auto 0 0;width:0%;background:rgba(61,130,246,.28);transition:width .12s linear;} .load-progress-bytes{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:0 .45rem;font-family:ui-monospace,SFMono-Regular,Monaco,Menlo,Consolas,"Liberation Mono",monospace;color:#cdd3d8;text-shadow:0 1px 1px #0008;white-space:nowrap;} .collapse-bar{background:var(--panel-alt); padding:.4rem .9rem; display:flex; gap:1rem; align-items:center; cursor:pointer; user-select:none; border-bottom:1px solid var(--border);} .collapse-bar h2{font-size:.8rem; margin:0; letter-spacing:.5px; font-weight:600;} .chevron{transition:transform .25s ease;} .collapsed .chevron{transform:rotate(-90deg);} #details{display:none; padding:.75rem .9rem; background:var(--panel-alt); border-bottom:1px solid var(--border);} pre{margin:0; font-family:ui-monospace,SFMono-Regular,Monaco,Menlo,Consolas,"Liberation Mono",monospace; font-size:.75rem; line-height:1.3; background:#111a; padding:.5rem .6rem; border:1px solid #444a; border-radius:4px; overflow:auto; max-height:320px;}
     code.json-key{color:#8ab4f8;} code.json-string{color:#98c379;} code.json-number{color:#d19a66;} code.json-boolean{color:#56b6c2;} code.json-null{color:#c678dd;}
     main{flex:1 1 auto; display:flex; min-height:0;} .columns{display:flex; gap:1rem; padding:1rem; width:100%; min-height:0; flex:1;} .col{flex:1 1 50%; display:flex; flex-direction:column; gap:.75rem; min-height:0;} .panel-header{display:flex; gap:.5rem; align-items:center; margin:0 0 .5rem;} .panel-title{font-size:.75rem; font-weight:600; letter-spacing:.5px; margin:0; color:var(--muted); text-transform:uppercase;} .mode-select{font-size:.7rem; padding:.25rem .4rem;}
   .message{border:1px solid var(--border); background:var(--panel); padding:.4rem .55rem .55rem; border-radius:6px; display:flex; flex-direction:column; gap:.25rem;}
@@ -280,12 +280,22 @@
         <option value="en">English</option>
       </select>
     </div>
-    <div class="grow"></div><div class="status" id="status">未加载文件</div>
-    <a class="github-link" href="https://github.com/LinXueyuanStdio/trajv" target="_blank" rel="noopener" aria-label="GitHub Repository" title="GitHub">
-      <svg viewBox="0 0 16 16" aria-hidden="true">
-        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.19 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/>
-      </svg>
-    </a>
+    <div class="grow"></div>
+    <div class="header-right">
+      <div class="status" id="status">未加载文件</div>
+      <div class="load-progress" id="loadProgress" hidden>
+        <div id="loadProgressLabel" class="load-progress-title">解析文件...</div>
+        <div class="load-progress-meter">
+          <div id="loadProgressBar"></div>
+          <span id="loadProgressBytes" class="load-progress-bytes">0 B / 0 B</span>
+        </div>
+      </div>
+      <a class="github-link" href="https://github.com/LinXueyuanStdio/trajv" target="_blank" rel="noopener" aria-label="GitHub Repository" title="GitHub">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.19 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/>
+        </svg>
+      </a>
+    </div>
   </header>
   <!-- dropzone merged into fileArea -->
   <main>
@@ -362,6 +372,11 @@
     const stepLabel=el('stepLabel');
     const inputPanelTitle=el('inputPanelTitle');
     const outputPanelTitle=el('outputPanelTitle');
+    const loadProgress=el('loadProgress');
+    const loadProgressLabel=el('loadProgressLabel');
+    const loadProgressBytes=el('loadProgressBytes');
+    const loadProgressBar=el('loadProgressBar');
+    let activeLoadTask=null;
 
     // --- Compact header helpers ---
     function enterCompact(){fileArea.classList.add('compact'); if(fileHint) fileHint.style.display='none';}
@@ -382,60 +397,127 @@
   const ttl=document.querySelector('#imgPreviewOverlay .mac-title'); if(ttl) ttl.textContent=t('previewTitle');}
     langSelect.value=state.lang;langSelect.addEventListener('change',()=>{state.lang=langSelect.value;applyLangStatic();render();});
     function setStatus(msg,ok=true){statusEl.textContent=msg;statusEl.style.color=ok?'var(--muted)':'var(--danger)';}
+  function formatBytes(bytes){
+    const n=Number(bytes)||0;
+    if(n<1024)return n+' B';
+    const units=['KB','MB','GB','TB'];
+    let value=n/1024,unit=units[0];
+    for(let i=1;i<units.length&&value>=1024;i++){value/=1024;unit=units[i];}
+    return value.toFixed(value>=100?0:value>=10?1:2)+' '+unit;
+  }
+  function makeAbortError(){
+    try{return new DOMException('Load aborted','AbortError');}
+    catch{const err=new Error('Load aborted');err.name='AbortError';return err;}
+  }
+  function throwIfAborted(signal){if(signal&&signal.aborted)throw makeAbortError();}
+  function isAbortError(err){return !!err&&(err.name==='AbortError'||/aborted/i.test(String(err.message||err)));}
+  function yieldToBrowser(){return new Promise(resolve=>setTimeout(resolve,0));}
+  function waitForInitialPaint(){
+    return new Promise(resolve=>{
+      if(typeof requestAnimationFrame!=='function'){setTimeout(resolve,0);return;}
+      requestAnimationFrame(()=>requestAnimationFrame(resolve));
+    });
+  }
+  function abortActiveLoad(){
+    if(activeLoadTask&&activeLoadTask.controller&&!activeLoadTask.controller.signal.aborted){
+      activeLoadTask.controller.abort();
+    }
+    activeLoadTask=null;
+  }
+  function startLoadTask(){
+    abortActiveLoad();
+    const controller=new AbortController();
+    activeLoadTask={controller,id:Date.now()+Math.random()};
+    return activeLoadTask;
+  }
+  function isCurrentLoadTask(task){return activeLoadTask===task&&task&&!task.controller.signal.aborted;}
+  function showLoadProgress(label,loadedBytes,totalBytes,steps){
+    if(!loadProgress)return;
+    statusEl.classList.remove('loaded-file');
+    statusEl.title='';
+    statusEl.style.display='none';
+    loadProgress.hidden=false;
+    loadProgressLabel.textContent=label||t('loadingParsing');
+    updateLoadProgress({loadedBytes,totalBytes,steps});
+  }
+  function updateLoadProgress(p={}){
+    if(!loadProgress||loadProgress.hidden)return;
+    const loaded=Number(p.loadedBytes)||0;
+    const total=Number(p.totalBytes)||0;
+    const pct=total>0?Math.max(0,Math.min(100,(loaded/total)*100)):(p.done?100:0);
+    loadProgressBar.style.width=pct.toFixed(1)+'%';
+    loadProgressBytes.textContent=`${formatBytes(loaded)} / ${formatBytes(total)}`;
+    if(p.label)loadProgressLabel.textContent=p.label;
+  }
+  function completeLoadProgress(label,totalBytes,steps,fullPath){
+    hideLoadProgress();
+    setLoadedFileStatus(label,totalBytes,fullPath);
+  }
+  function setLoadedFileStatus(label,totalBytes,fullPath){
+    statusEl.classList.add('loaded-file');
+    statusEl.title=fullPath||label;
+    setStatus(formatLoadedFileLabel(label,totalBytes),true);
+  }
+  function hideLoadProgress(){
+    if(!loadProgress)return;
+    loadProgress.hidden=true;
+    loadProgressBar.style.width='0%';
+    statusEl.style.display='';
+  }
+  function formatLoadedFileLabel(label,totalBytes){
+    return `${label} (${formatBytes(totalBytes)})`;
+  }
+  function normalizeRolloutStep(obj,index){
+    const stepObj={...obj};
+    const inference=obj.inference_args||obj.inferenceArgs||{};
+    let tools=obj.tools||[];
+    if((!tools||!tools.length)&&inference&&Array.isArray(inference.tools)&&inference.tools.length)tools=inference.tools;
+    let inputMessages=obj.input_messages||obj.inputMessages||[];
+    let outputMessages=obj.output_messages||obj.outputMessages||[];
+    if(inputMessages.length===0&&outputMessages.length===0&&obj.messages&&Array.isArray(obj.messages)&&obj.messages.length>0){
+      if(obj.messages.length===1){outputMessages=obj.messages;}
+      else{inputMessages=obj.messages.slice(0,-1);outputMessages=[obj.messages[obj.messages.length-1]];}
+    }
+    stepObj.url=obj.url||'';
+    stepObj.input_messages=inputMessages;
+    stepObj.output_messages=outputMessages;
+    stepObj.inference_args=inference;
+    stepObj.tools=tools||[];
+    stepObj.is_answer=obj.is_answer||obj.isAnswer||false;
+    stepObj.turn=obj.turn??0;
+    stepObj.step=obj.step??index;
+    stepObj.meta=obj.meta||{};
+    return stepObj;
+  }
   selectFilesBtn.addEventListener('click',()=>fileInput.click());
   fileInput.addEventListener('change',()=>{if(!fileInput.files.length)return;enterCompact();loadSelectedFiles();});
     // --- Stream JSONL from File to support very large files ---
-    async function parseJSONLFile(file,onProgress){
-      const reader = file.stream().getReader();
+    async function parseJSONLStream(stream,onProgress,options={}){
+      const signal=options.signal;
+      const totalBytes=Number(options.totalBytes)||0;
+      const reader = stream.getReader();
       const decoder = new TextDecoder();
-      let {value,done} = await reader.read();
       let buffer = '';
       const steps=[];
       let lineNo=0;
       let lastTick=0;
+      let lastYield=0;
+      let loadedBytes=0;
       function pushLine(line){
         const trimmed=line.trim();
         if(!trimmed) return;
         try{
           const obj=JSON.parse(trimmed);
-
-          // Keep all original keys, then normalize/add essential fields
-          const stepObj = { ...obj };
-
-          const inference=obj.inference_args||obj.inferenceArgs||{};
-          let tools=obj.tools||[];
-          if((!tools||!tools.length)&&inference&&Array.isArray(inference.tools)&&inference.tools.length) tools=inference.tools;
-
-          // Handle messages field fallback logic
-          let inputMessages = obj.input_messages || obj.inputMessages || [];
-          let outputMessages = obj.output_messages || obj.outputMessages || [];
-
-          // If no input_messages/output_messages, fall back to messages field
-          if (inputMessages.length === 0 && outputMessages.length === 0 && obj.messages && Array.isArray(obj.messages) && obj.messages.length > 0) {
-            // Last message is output, rest are input
-            if (obj.messages.length === 1) {
-              outputMessages = obj.messages;
-            } else {
-              inputMessages = obj.messages.slice(0, -1);
-              outputMessages = [obj.messages[obj.messages.length - 1]];
-            }
-          }
-
-          // Normalize essential fields (these may override original if naming differs)
-          stepObj.url = obj.url || '';
-          stepObj.input_messages = inputMessages;
-          stepObj.output_messages = outputMessages;
-          stepObj.inference_args = inference;
-          stepObj.tools = tools || [];
-          stepObj.is_answer = obj.is_answer || obj.isAnswer || false;
-          stepObj.turn = obj.turn ?? 0;
-          stepObj.step = obj.step ?? (steps.length);
-          stepObj.meta = obj.meta || {};
-
-          steps.push(stepObj);
+          steps.push(normalizeRolloutStep(obj,steps.length));
         }catch(e){ console.warn('跳过无效 JSON 行',lineNo,e); }
       }
-      while(!done){
+      try{
+      while(true){
+        throwIfAborted(signal);
+        const {value,done}=await reader.read();
+        throwIfAborted(signal);
+        if(done)break;
+        loadedBytes += value ? value.byteLength : 0;
         buffer += decoder.decode(value,{stream:true});
         let idx;
         while((idx=buffer.indexOf('\n'))!==-1){
@@ -443,66 +525,97 @@
           buffer = buffer.slice(idx+1);
           lineNo++;
           pushLine(line);
+          if(lineNo%1000===0){
+            throwIfAborted(signal);
+            const now=performance.now();
+            if(now-lastYield>16){lastYield=now;await yieldToBrowser();}
+          }
         }
         const now=performance.now();
         if(typeof onProgress==='function' && now-lastTick>200){
           lastTick=now;
-          try{ onProgress({lines:lineNo,steps:steps.length}); }catch{}
+          try{ onProgress({lines:lineNo,steps:steps.length,loadedBytes,totalBytes}); }catch{}
         }
-        ({value,done}=await reader.read());
       }
-      // flush remaining
       buffer += decoder.decode();
       if(buffer.length){ lineNo++; pushLine(buffer); }
       if(typeof onProgress==='function'){
-        try{ onProgress({lines:lineNo,steps:steps.length,done:true}); }catch{}
+        try{ onProgress({lines:lineNo,steps:steps.length,loadedBytes:totalBytes||loadedBytes,totalBytes,done:true}); }catch{}
       }
       return {steps};
+      }catch(e){
+        if(isAbortError(e)){try{await reader.cancel();}catch{}}
+        throw e;
+      }finally{
+        try{reader.releaseLock();}catch{}
+      }
+    }
+    async function parseJSONLFile(file,onProgress,options={}){
+      return parseJSONLStream(file.stream(),onProgress,{...options,totalBytes:options.totalBytes??file.size});
     }
   async function loadSelectedFiles(){
     if(!fileInput.files.length)return;
+    const task=startLoadTask();
     let hadError=false;
     let latestKey=null; let latestMtime=-1;
+    let latestSize=0; let latestSteps=0; let latestPath='';
     for(const f of fileInput.files){
       try{
-        const {steps}=await parseJSONLFile(f,(p)=>{setStatus(`解析 ${f.name} … ${p.steps||0} steps`,true);});
+        throwIfAborted(task.controller.signal);
+        showLoadProgress(`解析 ${f.name}`,0,f.size,0);
+        const {steps}=await parseJSONLFile(f,(p)=>{updateLoadProgress({...p,label:`解析 ${f.name}`});},{signal:task.controller.signal,totalBytes:f.size});
+        if(!isCurrentLoadTask(task))return;
         const mtime=typeof f.lastModified==='number'?f.lastModified:Date.now();
         state.files.set(f.name,{steps,mtime});
-        if(mtime>latestMtime){latestMtime=mtime;latestKey=f.name;}
+        if(mtime>latestMtime){latestMtime=mtime;latestKey=f.name;latestSize=f.size;latestSteps=steps.length;latestPath=f.webkitRelativePath||f.name;}
       }catch(e){
+        if(isAbortError(e))return;
+        hideLoadProgress();
         console.error(e);hadError=true;setStatus(t('parseFailed')+f.name,false);
       }
     }
+    if(!isCurrentLoadTask(task))return;
     if(latestKey) state.currentFile=latestKey;
     refreshFileSelect();
-    if(!hadError){statusEl.textContent='';statusEl.style.display='none';enterCompact();}
+    if(!hadError){if(latestKey)completeLoadProgress(latestKey,latestSize,latestSteps,latestPath);enterCompact();}
+    activeLoadTask=null;
     fileInput.value='';
   }
     folderBtn.addEventListener('click',()=>dirInput.click());
   dirInput.addEventListener('change',()=>{if(!dirInput.files.length)return;enterCompact();loadDirectoryFiles(dirInput.files);});
   async function loadDirectoryFiles(fileList){
+    const task=startLoadTask();
     let hadError=false;statusEl.style.display='';setStatus(t('loadingParsing'));
     let loaded=0,skipped=0;
+    let loadedBytes=0,loadedSteps=0;
     let latestKey=null; let latestMtime=-1;
     for(const f of fileList){
-      if(!f.name.toLowerCase().endsWith('.jsonl')){skipped++;continue;}
       const display=f.webkitRelativePath||f.name;
       try{
-        const {steps}=await parseJSONLFile(f,(p)=>{setStatus(`解析 ${display} … ${p.steps||0} steps`,true);});
+        throwIfAborted(task.controller.signal);
+        if(!f.name.toLowerCase().endsWith('.jsonl')){skipped++;continue;}
+        showLoadProgress(`解析 ${display}`,0,f.size,0);
+        const {steps}=await parseJSONLFile(f,(p)=>{updateLoadProgress({...p,label:`解析 ${display}`});},{signal:task.controller.signal,totalBytes:f.size});
+        if(!isCurrentLoadTask(task))return;
         const mtime=typeof f.lastModified==='number'?f.lastModified:Date.now();
         state.files.set(display,{steps,mtime});
         loaded++;
+        loadedBytes+=f.size; loadedSteps+=steps.length;
         if(mtime>latestMtime){latestMtime=mtime;latestKey=display;}
       }catch(e){
+        if(isAbortError(e))return;
+        hideLoadProgress();
         console.error(e);hadError=true;setStatus(t('parseFailed')+display,false);
       }
     }
+    if(!isCurrentLoadTask(task))return;
     if(latestKey) state.currentFile=latestKey;
     refreshFileSelect();
     if(!hadError){
-      if(loaded||skipped){const tpl=t('skipInfo').replace('{loaded}',loaded).replace('{skipped}',skipped);setStatus(tpl);}else{statusEl.textContent='';statusEl.style.display='none';}
+      if(loaded||skipped){const tpl=t('skipInfo').replace('{loaded}',loaded).replace('{skipped}',skipped);setStatus(tpl);completeLoadProgress(tpl,loadedBytes,loadedSteps,latestKey||tpl);}else{hideLoadProgress();statusEl.textContent='';statusEl.style.display='none';}
       if(loaded) enterCompact();
     }
+    activeLoadTask=null;
     dirInput.value='';
   }
   function refreshFileSelect(){trajectorySelect.innerHTML='';for(const name of state.files.keys()){const opt=document.createElement('option');opt.value=name;opt.textContent=name+' ('+state.files.get(name).steps.length+')';trajectorySelect.appendChild(opt);}trajectorySelect.disabled=!state.files.size;if(state.files.size){if(!state.currentFile||!state.files.has(state.currentFile))state.currentFile=trajectorySelect.options[0].value;trajectorySelect.value=state.currentFile;state.currentIndex=0;enterCompact();render();}else {clearDisplay();exitCompact();}}
@@ -918,7 +1031,123 @@
   // Drag & drop on unified fileArea
   ;['dragenter','dragover'].forEach(ev=>fileArea.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();fileArea.classList.add('dragover');}));
   ;['dragleave','drop'].forEach(ev=>fileArea.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();if(e.type==='drop'){const files=e.dataTransfer.files;if(files&&files.length){fileInput.files=files;enterCompact();loadSelectedFiles();}}fileArea.classList.remove('dragover');}));
-    function parseJSONL(text){const lines=text.split(/\r?\n/).filter(l=>l.trim().length);const steps=[];for(let i=0;i<lines.length;i++){const line=lines[i];try{const obj=JSON.parse(line);const stepObj={...obj};const inference=obj.inference_args||obj.inferenceArgs||{};let tools=obj.tools||[];if((!tools||!tools.length)&&inference&&Array.isArray(inference.tools)&&inference.tools.length)tools=inference.tools;let inputMessages=obj.input_messages||obj.inputMessages||[];let outputMessages=obj.output_messages||obj.outputMessages||[];if(inputMessages.length===0&&outputMessages.length===0&&obj.messages&&Array.isArray(obj.messages)&&obj.messages.length>0){if(obj.messages.length===1){outputMessages=obj.messages;}else{inputMessages=obj.messages.slice(0,-1);outputMessages=[obj.messages[obj.messages.length-1]];}}stepObj.url=obj.url||'';stepObj.input_messages=inputMessages;stepObj.output_messages=outputMessages;stepObj.inference_args=inference;stepObj.tools=tools||[];stepObj.is_answer=obj.is_answer||obj.isAnswer||false;stepObj.turn=obj.turn??0;stepObj.step=obj.step??i;stepObj.meta=obj.meta||{};steps.push(stepObj);}catch(e){console.warn('跳过无效 JSON 行',i+1,e);} }return {steps,rawLines:lines};}
+    function parseJSONL(text){
+      const lines=text.split(/\r?\n/).filter(l=>l.trim().length);
+      const steps=[];
+      for(let i=0;i<lines.length;i++){
+        try{steps.push(normalizeRolloutStep(JSON.parse(lines[i]),steps.length));}
+        catch(e){console.warn('跳过无效 JSON 行',i+1,e);}
+      }
+      return {steps,rawLines:lines};
+    }
+    async function parseJSONLText(text,onProgress,options={}){
+      const signal=options.signal;
+      const totalBytes=Number(options.totalBytes)||new TextEncoder().encode(text).byteLength;
+      const lines=text.split(/\r?\n/);
+      const steps=[];
+      let loadedBytes=0,lastTick=0,lastYield=0;
+      for(let i=0;i<lines.length;i++){
+        throwIfAborted(signal);
+        const line=lines[i];
+        loadedBytes+=line.length+1;
+        if(!line.trim())continue;
+        try{steps.push(normalizeRolloutStep(JSON.parse(line),steps.length));}
+        catch(e){console.warn('跳过无效 JSON 行',i+1,e);}
+        const now=performance.now();
+        if(typeof onProgress==='function'&&now-lastTick>200){
+          lastTick=now;
+          try{onProgress({lines:i+1,steps:steps.length,loadedBytes:Math.min(loadedBytes,totalBytes),totalBytes});}catch{}
+        }
+        if(now-lastYield>16){lastYield=now;await yieldToBrowser();}
+      }
+      if(typeof onProgress==='function'){
+        try{onProgress({lines:lines.length,steps:steps.length,loadedBytes:totalBytes,totalBytes,done:true});}catch{}
+      }
+      return {steps};
+    }
+    function hideEditorOpenControls(){
+      const hide=(id)=>{const el=document.getElementById(id);if(el)el.style.display='none';};
+      try{
+        if(!document.getElementById('vscode-hide-style')){
+          const st=document.createElement('style');st.id='vscode-hide-style';st.textContent='#fileArea, #trajectorySelect { display: none !important; }';document.head.appendChild(st);
+        }
+      }catch(_){}
+      hide('fileArea');hide('trajectorySelect');
+      if(typeof enterCompact==='function')enterCompact();
+    }
+    function filenameFromUri(uri,fallback){
+      try{const u=new URL(uri);const p=u.pathname||'';return decodeURIComponent(p.split('/').pop()||fallback||'Active Document');}
+      catch{return fallback||'Active Document';}
+    }
+    function pathFromUri(uri,fallback){
+      try{
+        const u=new URL(uri);
+        if(u.protocol==='file:')return decodeURIComponent(u.pathname||fallback||'');
+        return decodeURIComponent(uri||fallback||'');
+      }catch{return fallback||'';}
+    }
+    async function loadFileFromWebviewUri(msg){
+      const task=startLoadTask();
+      const name=msg.name||filenameFromUri(msg.uri,'Active Document');
+      const fullPath=pathFromUri(msg.uri,name);
+      const totalBytes=Number(msg.size)||0;
+      hideEditorOpenControls();
+      try{
+        showLoadProgress(`读取 ${name}`,0,totalBytes,0);
+        await waitForInitialPaint();
+        throwIfAborted(task.controller.signal);
+        const response=await fetch(msg.webviewUri);
+        throwIfAborted(task.controller.signal);
+        if(!response.ok)throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        let parsed;
+        if(response.body){
+          parsed=await parseJSONLStream(response.body,(p)=>{updateLoadProgress({...p,label:`解析 ${name}`});},{signal:task.controller.signal,totalBytes});
+        }else{
+          const blob=await response.blob();
+          parsed=await parseJSONLFile(new File([blob],name,{type:'application/jsonl'}),(p)=>{updateLoadProgress({...p,label:`解析 ${name}`});},{signal:task.controller.signal,totalBytes:totalBytes||blob.size});
+        }
+        if(!isCurrentLoadTask(task))return;
+        state.files.clear();
+        state.files.set(name,{steps:parsed.steps||[],mtime:msg.mtime||Date.now()});
+        state.currentFile=name;state.currentIndex=0;
+        refreshFileSelect();
+        completeLoadProgress(name,totalBytes||Number(msg.size)||0,(parsed.steps||[]).length,fullPath);
+        activeLoadTask=null;
+      }catch(err){
+        if(isAbortError(err))return;
+        console.error('Failed to load injected JSONL URI',err);
+        hideLoadProgress();
+        setStatus(t('parseFailed')+name,false);
+        if(isCurrentLoadTask(task))activeLoadTask=null;
+      }
+    }
+    async function loadInjectedContent(msg){
+      const task=startLoadTask();
+      const content=msg.content||'';
+      const name=msg.name||filenameFromUri(msg.uri,'Active Document');
+      const fullPath=pathFromUri(msg.uri,name);
+      const totalBytes=Number(msg.size)||new TextEncoder().encode(content).byteLength;
+      hideEditorOpenControls();
+      try{
+        showLoadProgress(`解析 ${name}`,0,totalBytes,0);
+        await waitForInitialPaint();
+        throwIfAborted(task.controller.signal);
+        const parsed=await parseJSONLText(content,(p)=>{updateLoadProgress({...p,label:`解析 ${name}`});},{signal:task.controller.signal,totalBytes});
+        if(!isCurrentLoadTask(task))return;
+        state.files.clear();
+        state.files.set(name,{steps:parsed.steps||[],mtime:msg.mtime||Date.now()});
+        state.currentFile=name;state.currentIndex=0;
+        refreshFileSelect();
+        completeLoadProgress(name,totalBytes,(parsed.steps||[]).length,fullPath);
+        activeLoadTask=null;
+      }catch(err){
+        if(isAbortError(err))return;
+        console.error('Failed to parse injected JSONL',err);
+        hideLoadProgress();
+        setStatus(t('parseFailed')+name,false);
+        if(isCurrentLoadTask(task))activeLoadTask=null;
+      }
+    }
 
   // Load file from URL parameter (supports both remote URLs and local file:// paths)
   async function loadFileFromUrl(url, retryCount = 0) {
@@ -990,10 +1219,7 @@
       state.currentFile = filename;
 
       refreshFileSelect();
-      setStatus(`成功加载: ${filename} (${steps.length} steps)`, true);
-      setTimeout(() => {
-        statusEl.style.display = 'none';
-      }, 2000);
+      completeLoadProgress(filename, blob.size, steps.length, url);
       enterCompact();
     } catch (e) {
       console.error('[loadFileFromUrl] Error:', e);
@@ -1108,44 +1334,29 @@
   })();
   </script>
   <script>
-  // VS Code webview integration: when extension posts the JSONL content, auto-load and hide file UI
+  // VS Code webview integration: stream file content when extension posts a webview URI.
   (function(){
     try{
-      const vscode = typeof acquireVsCodeApi==='function'?acquireVsCodeApi():null;
+      const vscode = window.__trajvVscodeApi || (typeof acquireVsCodeApi==='function'?acquireVsCodeApi():null);
+      if(vscode)window.__trajvVscodeApi=vscode;
       // announce ready to extension to avoid race conditions
       const postReady = () => { try { vscode && vscode.postMessage({ type: 'ready' }); } catch(_){} };
       if (document.readyState === 'complete' || document.readyState === 'interactive') { postReady(); }
       else { window.addEventListener('DOMContentLoaded', postReady, { once: true }); }
-      window.addEventListener('message', (event) => {
+      window.addEventListener('message', async (event) => {
         const msg = event.data;
-        if (!msg || msg.type !== 'load') return;
-        const content = msg.content || '';
-        // Hide file area & selector in editor-open scenario
-        const hide = (id)=>{ const el=document.getElementById(id); if(el) el.style.display='none'; };
-        // Also enforce via style to avoid re-showing
-        try{
-          if(!document.getElementById('vscode-hide-style')){
-            const st=document.createElement('style'); st.id='vscode-hide-style'; st.textContent='#fileArea, #trajectorySelect { display: none !important; }'; document.head.appendChild(st);
-          }
-        }catch(_){ }
-        hide('fileArea'); hide('trajectorySelect');
-        if (typeof enterCompact==='function') enterCompact();
-        try{
-          const {steps,rawLines}=parseJSONL(content);
-          const name = (function(){
-            try{ const u=new URL(msg.uri); const p=u.pathname||''; return decodeURIComponent(p.split('/').pop()||'Active Document'); }catch{return 'Active Document';}
-          })();
-          state.files.clear();
-          state.files.set(name,{steps,rawLines,mtime:Date.now()});
-          state.currentFile=name; state.currentIndex=0;
-          refreshFileSelect();
-          try{ const st=document.getElementById('status'); if(st){ st.textContent=name; st.style.display=''; st.style.color='var(--muted)'; } }catch(_){ }
-        }catch(err){
-          console.error('Failed to parse injected JSONL, showing plain view',err);
-          const root=document.getElementById('jsonl-root')||document.body;root.innerHTML='';
-          const pre=document.createElement('pre');
-          pre.textContent=String(content);
-          root.appendChild(pre);
+        if(!msg)return;
+        if(msg.type === 'loadUri'){
+          await loadFileFromWebviewUri(msg);
+          return;
+        }
+        if(msg.type === 'load'){
+          await loadInjectedContent(msg);
+          return;
+        }
+        if(msg.type === 'loadError'){
+          hideLoadProgress();
+          setStatus(`加载失败: ${msg.message||'unknown error'}`,false);
         }
       });
     }catch(e){/* ignore in plain browser */}

@@ -2,7 +2,7 @@
   "name": "trajv-jsonl-viewer",
   "displayName": "TrajV JSONL Viewer",
   "description": "轨迹浏览器，打开并展示 agent rollout 文件，本质是 .jsonl 文件。https://linxueyuan.online/trajv",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "publisher": "LinXueyuanStdio",
   "license": "MIT",
   "engines": {
@@ -58,6 +58,7 @@
     "package": "npm run prepackage && vsce package --out dist/trajv-jsonl-viewer-${npm_package_version}.vsix",
     "publish:marketplace": "vsce publish",
     "build:icon": "node scripts/build-icon.js",
+    "test:load": "node --test scripts/load-performance.test.js",
     "lint": "echo 'No linter configured'"
   },
   "devDependencies": {

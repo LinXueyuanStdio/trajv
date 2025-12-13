@@ -5,9 +5,9 @@
 
 ![GitHub Repo stars](https://img.shields.io/github/stars/LinXueyuanStdio/trajv?style=social) ![GitHub issues](https://img.shields.io/github/issues/LinXueyuanStdio/trajv) ![GitHub license](https://img.shields.io/github/license/LinXueyuanStdio/trajv) ![GitHub last commit](https://img.shields.io/github/last-commit/LinXueyuanStdio/trajv) ![GitHub contributors](https://img.shields.io/github/contributors/LinXueyuanStdio/trajv) ![GitHub repo size](https://img.shields.io/github/repo-size/LinXueyuanStdio/trajv)
 
-[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/linxueyuanstudio.trajv-jsonl-viewer?label=VS%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=linxueyuanstudio.trajv-jsonl-viewer)
-[![Visual Studio Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/linxueyuanstudio.trajv-jsonl-viewer)](https://marketplace.visualstudio.com/items?itemName=linxueyuanstudio.trajv-jsonl-viewer)
-[![Open VSX](https://img.shields.io/badge/Open%20VSX-coming%20soon-grey)](https://open-vsx.org/extension/linxueyuanstudio/trajv-jsonl-viewer)
+[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/linxueyuanstudio.trajv-jsonl-viewer?label=VS%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=LinXueyuanStdio.trajv-jsonl-viewer)
+[![Visual Studio Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/linxueyuanstudio.trajv-jsonl-viewer)](https://marketplace.visualstudio.com/items?itemName=LinXueyuanStdio.trajv-jsonl-viewer)
+[![Open VSX](https://img.shields.io/badge/Open%20VSX-coming%20soon-grey)](https://open-vsx.org/extension/LinXueyuanStdio/trajv-jsonl-viewer)
 
 > 🚀 Trajectory Browser: Visualizing and navigating agent rollout trajectory files seamlessly.
 

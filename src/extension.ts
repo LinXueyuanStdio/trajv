@@ -20,36 +20,71 @@ export function activate(context: vscode.ExtensionContext) {
         ]
       };
 
-      const html = await getHtmlForWebview(webviewPanel.webview, context, document.uri);
-      webviewPanel.webview.html = html;
+      webviewPanel.webview.html = initialShellHtml();
 
-      // Prepare file content; send only after webview signals ready to avoid race conditions
-      const fileContent = await vscode.workspace.fs.readFile(document.uri);
-      const text = new TextDecoder().decode(fileContent);
-
-      let didSend = false;
-      const sendLoad = () => {
-        if (didSend) return;
-        didSend = true;
-        webviewPanel.webview.postMessage({ type: 'load', uri: document.uri.toString(), content: text });
+      const buildLoadMessage = async () => {
+        const stat = await vscode.workspace.fs.stat(document.uri);
+        return {
+          type: 'loadUri',
+          uri: document.uri.toString(),
+          webviewUri: webviewPanel.webview.asWebviewUri(document.uri).toString(),
+          name: path.basename(document.uri.fsPath),
+          size: stat.size,
+          mtime: stat.mtime
+        };
       };
 
-      // Fallback: if 'ready' not received within 1500ms, try sending anyway; also retry once later
-      const t1 = setTimeout(() => sendLoad(), 1500);
-      const t2 = setTimeout(() => sendLoad(), 3000);
+      let didSend = false;
+      const sendLoad = async (force = false) => {
+        if (didSend && !force) return;
+        didSend = true;
+        try {
+          webviewPanel.webview.postMessage(await buildLoadMessage());
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          webviewPanel.webview.postMessage({ type: 'loadError', message });
+        }
+      };
+
+      let t1: ReturnType<typeof setTimeout> | undefined;
+      let t2: ReturnType<typeof setTimeout> | undefined;
+      const clearLoadTimers = () => {
+        if (t1) clearTimeout(t1);
+        if (t2) clearTimeout(t2);
+        t1 = undefined;
+        t2 = undefined;
+      };
+      const startLoadTimers = () => {
+        clearLoadTimers();
+        // Fallback: if 'ready' is not received, try sending after the app shell is installed.
+        t1 = setTimeout(() => sendLoad(), 1500);
+        t2 = setTimeout(() => sendLoad(), 3000);
+      };
 
       // Save requests from webview are ignored (readonly)
       webviewPanel.webview.onDidReceiveMessage(async (msg) => {
         if (msg?.type === 'ready') {
-          clearTimeout(t1); clearTimeout(t2);
+          clearLoadTimers();
           sendLoad();
           return;
         }
         if (msg?.type === 'requestReload') {
-          const data = await vscode.workspace.fs.readFile(document.uri);
-          webviewPanel.webview.postMessage({ type: 'load', uri: document.uri.toString(), content: new TextDecoder().decode(data) });
+          await sendLoad(true);
         }
       });
+
+      const bootstrapWebview = async () => {
+        try {
+          const html = await getHtmlForWebview(webviewPanel.webview, context, document.uri);
+          webviewPanel.webview.html = html;
+          startLoadTimers();
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          webviewPanel.webview.html = basicHtml(`Failed to initialize TrajV: ${message}`);
+        }
+      };
+
+      void bootstrapWebview();
     }
   };
 
@@ -60,23 +95,36 @@ export function activate(context: vscode.ExtensionContext) {
 
 export function deactivate() {}
 
-async function getHtmlForWebview(webview: vscode.Webview, context: vscode.ExtensionContext, documentUri: vscode.Uri): Promise<string> {
-  // Use workspace root or document directory as base for index.html
-  const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-  const docDir = path.dirname(documentUri.fsPath);
-  const baseRoot = workspaceFolder || docDir;
-  const indexPath = path.join(baseRoot, 'index.html');
-  let html = '';
+function initialShellHtml(): string {
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline';">
+  <style>
+    :root{color-scheme:dark;--bg:#1e1f22;--panel:#2a2d31;--border:#444c56;--text:#e6e6e6;--muted:#9aa0a6}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+    header{height:48px;display:flex;align-items:center;gap:12px;padding:0 16px;background:var(--panel);border-bottom:1px solid var(--border)}
+    h1{font-size:15px;margin:0;font-weight:600}
+    .status{margin-left:auto;color:var(--muted);font-size:12px}
+    main{padding:16px;color:var(--muted);font-size:13px}
+  </style>
+</head>
+<body>
+  <header><h1>Trajectory Browser</h1><div class="status">Preparing viewer...</div></header>
+  <main>Loading interface...</main>
+</body>
+</html>`;
+}
+
+async function getHtmlForWebview(webview: vscode.Webview, context: vscode.ExtensionContext, _documentUri: vscode.Uri): Promise<string> {
+  const templateRoot = path.join(context.extensionPath, 'media');
+  const templatePath = path.join(templateRoot, 'template-index.html');
+  let html: string;
   try {
-    html = fs.readFileSync(indexPath, 'utf8');
-  } catch (e) {
-    // Fallback to bundled template
-    const bundled = path.join(context.extensionPath, 'media', 'template-index.html');
-    try {
-      html = fs.readFileSync(bundled, 'utf8');
-    } catch {
-      return basicHtml();
-    }
+    html = fs.readFileSync(templatePath, 'utf8');
+  } catch {
+    return basicHtml('Bundled TrajV template not found.');
   }
 
   // Inject CSP and boot script
@@ -87,72 +135,14 @@ async function getHtmlForWebview(webview: vscode.Webview, context: vscode.Extens
 
   const script = `
     <script nonce="${nonce}">
-      const vscodeApi = acquireVsCodeApi();
+      const vscodeApi = window.__trajvVscodeApi || acquireVsCodeApi();
+      window.__trajvVscodeApi = vscodeApi;
       // Notify extension when webview is ready to receive messages
       (function(){
         const postReady = () => { try { vscodeApi.postMessage({ type: 'ready' }); } catch(_){} };
         if (document.readyState === 'complete' || document.readyState === 'interactive') { postReady(); }
         else { window.addEventListener('DOMContentLoaded', postReady, { once: true }); }
       })();
-      window.addEventListener('message', (event) => {
-        const msg = event.data;
-        if (msg?.type === 'load') {
-          const content = msg.content || '';
-          try {
-            // Force hide file controls via an injected style to prevent re-show
-            (function(){
-              try{
-                if(!document.getElementById('vscode-hide-style')){
-                  const st = document.createElement('style');
-                  st.id = 'vscode-hide-style';
-                  st.textContent = '#fileArea, #trajectorySelect { display: none !important; }';
-                  document.head.appendChild(st);
-                }
-              }catch(e){}
-            })();
-            // Prefer rich template pipeline when available
-            const hideEl = (id) => { const el = document.getElementById(id); if (el) el.style.display = 'none'; };
-            const getFileName = () => {
-              try { const u = new URL(msg.uri); const p = u.pathname || ''; const n = decodeURIComponent(p.split('/').pop() || 'Active Document'); return n || 'Active Document'; } catch { return 'Active Document'; }
-            };
-            if (typeof parseJSONL === 'function') {
-              try {
-                if (typeof enterCompact === 'function') enterCompact();
-                hideEl('fileArea');
-                hideEl('trajectorySelect');
-                const parsed = parseJSONL(content);
-                const name = getFileName();
-                try {
-                  // Use global state/refresh if present
-                  if (typeof state !== 'undefined' && state && state.files && typeof state.files.set === 'function' && typeof refreshFileSelect === 'function') {
-                    state.files.clear();
-                    state.files.set(name, { steps: parsed.steps || [], rawLines: parsed.rawLines || [], mtime: Date.now() });
-                    state.currentFile = name;
-                    state.currentIndex = 0;
-                    refreshFileSelect();
-                    // Update status text to loaded filename
-                    try { const st = document.getElementById('status'); if (st) { st.textContent = name; st.style.display = ''; } } catch(_){ }
-                    return; // done
-                  }
-                } catch {}
-              } catch (err) {
-                console.error('Template load failed, fallback to plain view', err);
-              }
-            }
-            // Fallback: simple plain text view
-            const lines = content.split(/\r?\n/).filter(l => l.trim().length > 0);
-            const container = document.getElementById('jsonl-root') || document.body;
-            container.innerHTML = '';
-            const pre = document.createElement('pre');
-            pre.style.whiteSpace = 'pre-wrap';
-            pre.style.wordBreak = 'break-word';
-            pre.textContent = lines.map((l, i) => '[' + (i+1) + '] ' + l).join('\\n');
-            container.appendChild(pre);
-          } catch (err) {
-            console.error(err);
-          }
-        }
-      });
     </script>`;
 
   // Ensure a root element exists for rendering
@@ -179,10 +169,7 @@ async function getHtmlForWebview(webview: vscode.Webview, context: vscode.Extens
     }
     return m;
   });
-  // Rewrite local resource URLs to webview URIs if there are src/href to local files
-  // If using bundled template, treat its folder as root for resource rewriting
-  const usedRoot = fs.existsSync(indexPath) ? baseRoot : path.join(context.extensionPath, 'media');
-  html = rewriteLocalLinks(html, webview, usedRoot);
+  html = rewriteLocalLinks(html, webview, templateRoot);
   return html;
 }
 
