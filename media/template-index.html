@@ -398,6 +398,10 @@
         if(!trimmed) return;
         try{
           const obj=JSON.parse(trimmed);
+
+          // Keep all original keys, then normalize/add essential fields
+          const stepObj = { ...obj };
+
           const inference=obj.inference_args||obj.inferenceArgs||{};
           let tools=obj.tools||[];
           if((!tools||!tools.length)&&inference&&Array.isArray(inference.tools)&&inference.tools.length) tools=inference.tools;
@@ -417,20 +421,17 @@
             }
           }
 
-          const stepObj={
-            url:obj.url||'',
-            input_messages:inputMessages,
-            output_messages:outputMessages,
-            inference_args:inference,
-            tools:tools||[],
-            is_answer:obj.is_answer||obj.isAnswer||false,
-            turn:obj.turn??0,
-            step:obj.step??(steps.length),
-            meta:obj.meta||{}
-          };
-          if(obj.edited_input_messages) stepObj.edited_input_messages=obj.edited_input_messages;
-          if(obj.edited_output_messages) stepObj.edited_output_messages=obj.edited_output_messages;
-          if(obj.edited_tools) stepObj.edited_tools=obj.edited_tools;
+          // Normalize essential fields (these may override original if naming differs)
+          stepObj.url = obj.url || '';
+          stepObj.input_messages = inputMessages;
+          stepObj.output_messages = outputMessages;
+          stepObj.inference_args = inference;
+          stepObj.tools = tools || [];
+          stepObj.is_answer = obj.is_answer || obj.isAnswer || false;
+          stepObj.turn = obj.turn ?? 0;
+          stepObj.step = obj.step ?? (steps.length);
+          stepObj.meta = obj.meta || {};
+
           steps.push(stepObj);
         }catch(e){ console.warn('跳过无效 JSON 行',lineNo,e); }
       }
@@ -615,6 +616,7 @@
             escapeControlCharacters: false,
             escapeUnicodeCharacters: false,
             className: 'jse-theme-dark',
+            expand: () => true,
             onChange: (updatedContent, previousContent, { contentErrors, patchResult }) => {
               if (contentErrors) {
                 statusSpan.textContent = 'ERR: ' + (contentErrors.validationErrors?.[0]?.message || 'Invalid JSON');
@@ -768,6 +770,7 @@
             navigationBar: true,
             statusBar: true,
             className: 'jse-theme-dark',
+            expand: () => true,
             onChange: (updatedContent, previousContent, { contentErrors }) => {
               if (contentErrors) {
                 stepDetailsStatus.textContent = 'ERR: ' + (contentErrors.validationErrors?.[0]?.message || 'Invalid JSON');
@@ -915,7 +918,7 @@
   // Drag & drop on unified fileArea
   ;['dragenter','dragover'].forEach(ev=>fileArea.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();fileArea.classList.add('dragover');}));
   ;['dragleave','drop'].forEach(ev=>fileArea.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();if(e.type==='drop'){const files=e.dataTransfer.files;if(files&&files.length){fileInput.files=files;enterCompact();loadSelectedFiles();}}fileArea.classList.remove('dragover');}));
-    function parseJSONL(text){const lines=text.split(/\r?\n/).filter(l=>l.trim().length);const steps=[];for(let i=0;i<lines.length;i++){const line=lines[i];try{const obj=JSON.parse(line);const inference=obj.inference_args||obj.inferenceArgs||{};let tools=obj.tools||[];if((!tools||!tools.length)&&inference&&Array.isArray(inference.tools)&&inference.tools.length)tools=inference.tools;const stepObj={url:obj.url||'',input_messages:obj.input_messages||obj.inputMessages||[],output_messages:obj.output_messages||obj.outputMessages||[],inference_args:inference,tools:tools||[],is_answer:obj.is_answer||obj.isAnswer||false,turn:obj.turn??0,step:obj.step??i,meta:obj.meta||{}};if(obj.edited_input_messages)stepObj.edited_input_messages=obj.edited_input_messages;if(obj.edited_output_messages)stepObj.edited_output_messages=obj.edited_output_messages;if(obj.edited_tools)stepObj.edited_tools=obj.edited_tools;steps.push(stepObj);}catch(e){console.warn('跳过无效 JSON 行',i+1,e);} }return {steps,rawLines:lines};}
+    function parseJSONL(text){const lines=text.split(/\r?\n/).filter(l=>l.trim().length);const steps=[];for(let i=0;i<lines.length;i++){const line=lines[i];try{const obj=JSON.parse(line);const stepObj={...obj};const inference=obj.inference_args||obj.inferenceArgs||{};let tools=obj.tools||[];if((!tools||!tools.length)&&inference&&Array.isArray(inference.tools)&&inference.tools.length)tools=inference.tools;let inputMessages=obj.input_messages||obj.inputMessages||[];let outputMessages=obj.output_messages||obj.outputMessages||[];if(inputMessages.length===0&&outputMessages.length===0&&obj.messages&&Array.isArray(obj.messages)&&obj.messages.length>0){if(obj.messages.length===1){outputMessages=obj.messages;}else{inputMessages=obj.messages.slice(0,-1);outputMessages=[obj.messages[obj.messages.length-1]];}}stepObj.url=obj.url||'';stepObj.input_messages=inputMessages;stepObj.output_messages=outputMessages;stepObj.inference_args=inference;stepObj.tools=tools||[];stepObj.is_answer=obj.is_answer||obj.isAnswer||false;stepObj.turn=obj.turn??0;stepObj.step=obj.step??i;stepObj.meta=obj.meta||{};steps.push(stepObj);}catch(e){console.warn('跳过无效 JSON 行',i+1,e);} }return {steps,rawLines:lines};}
 
   // Load file from URL parameter (supports both remote URLs and local file:// paths)
   async function loadFileFromUrl(url, retryCount = 0) {
