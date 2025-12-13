@@ -13,7 +13,9 @@
 
 > 🚀 轨迹浏览器：浏览 agent rollout 轨迹文件
 
-在线预览：https://linxueyuan.online/trajv/
+在线预览：[https://linxueyuan.online/trajv/](https://linxueyuan.online/trajv/)
+
+你可以直接打开 huggingface datasets 上的 jsonl 文件，例如：[https://linxueyuan.online/trajv/?file_url=https://huggingface.co/datasets/TeichAI/claude-4.5-opus-high-reasoning-250x/resolve/main/claude-opus-4.5-250x.jsonl?download=true](https://linxueyuan.online/trajv/?file_url=https://huggingface.co/datasets/TeichAI/claude-4.5-opus-high-reasoning-250x/resolve/main/claude-opus-4.5-250x.jsonl?download=true)
 
 ⭐ 如果这个项目对您有帮助，请给它一个星星！
 
