@@ -147,26 +147,7 @@ Trajectory Browser 是一个简洁高效的在线工具，专为可视化和浏�
 - **自适应换行与横向滚动**：大数据结构浏览更友好。
 - **全屏与还原**：编辑器支持全屏、还原视图。
 
-## 🤝 贡献指南
-
-欢迎提交 Issue 和 Pull Request！
-
-1. Fork 本项目
-2. 创建您的特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交您的更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 打开一个 Pull Request
-
-## 📜 许可证
-
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
-
-## 📞 联系方式
-
-如有问题或建议，请通过以下方式联系：
-
-
-## JSONL Viewer VS Code 扩展
+## 🧩 JSONL Viewer VS Code 扩展
 
 本仓库已添加一个 VS Code 扩展，可用自定义只读编辑器打开以 `.jsonl` 为后缀的文件，并使用仓库根目录的 `index.html` 作为 Webview UI 模板进行展示。
 
@@ -192,5 +173,26 @@ Trajectory Browser 是一个简洁高效的在线工具，专为可视化和浏�
 ### 注意
 - 该编辑器为只读显示，不会修改 `.jsonl` 文件内容。
 - 未打开工作区时也可直接打开单个 `.jsonl` 文件。
+
+## 🤝 贡献指南
+
+欢迎提交 Issue 和 Pull Request！
+
+1. Fork 本项目
+2. 创建您的特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交您的更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 打开一个 Pull Request
+
+## 📜 许可证
+
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+
+## 📞 联系方式
+
+如有问题或建议，请通过以下方式联系：
+
+- 问题或建议：[GitHub Issues](https://github.com/LinXueyuanStdio/trajv/issues)
+- 联系作者：[LinXueyuanStdio](https://github.com/LinXueyuanStdio)
 
 ⭐ 如果这个项目对您有帮助，请给它一个星星！
