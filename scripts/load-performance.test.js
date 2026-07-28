@@ -40,6 +40,11 @@ test('bundled VS Code template hides upload controls while plain index keeps the
   assert.match(extensionTs, /const preHideCss = `<style id="vscode-hide-style">#fileArea, #trajectorySelect \{ display: none !important; \}<\/style>`/);
 });
 
+test('plain index keeps the original flexible header spacer design', () => {
+  assert.match(firstStyleBlock(rootIndexHtml), /\.grow\{flex:1 1 auto;\}/);
+  assert.match(firstStyleBlock(templateHtml), /\.grow\{display:none;\}/);
+});
+
 test('HTML template exposes visible load progress and interruptible parsing', () => {
   assert.match(templateHtml, /id="loadProgress"/);
   assert.match(templateHtml, /id="loadProgressBar"/);
