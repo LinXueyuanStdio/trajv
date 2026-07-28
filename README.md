@@ -18,9 +18,13 @@
 
 你可以直接打开 huggingface datasets 上的 jsonl 文件，例如：[https://linxueyuan.online/trajv/?file_url=https://huggingface.co/datasets/TeichAI/claude-4.5-opus-high-reasoning-250x/resolve/main/claude-opus-4.5-250x.jsonl?download=true](https://linxueyuan.online/trajv/?file_url=https://huggingface.co/datasets/TeichAI/claude-4.5-opus-high-reasoning-250x/resolve/main/claude-opus-4.5-250x.jsonl?download=true)
 
-⭐ 如果这个项目对您有帮助，请给它一个星星！
+![screenshot](./assets/screenshot.png "Screenshot")
 
-![](./assets/screenshot.png)
+也可以使用 VS Code 扩展，只读打开以 `.rollout.jsonl` 为后缀的文件。
+
+![screenshot](./assets/vscode-screenshot.png "VS Code Screenshot")
+
+⭐ 如果这个项目对您有帮助，请给它一个星星！
 
 ## 📖 项目简介
 
@@ -151,6 +155,8 @@ Trajectory Browser 是一个简洁高效的在线工具，专为可视化和浏�
 
 本仓库已添加一个 VS Code 扩展，可用自定义只读编辑器打开以 `.jsonl` 为后缀的文件，并使用仓库根目录的 `index.html` 作为 Webview UI 模板进行展示。
 
+![screenshot](./assets/vscode-screenshot.png)
+
 ### 主要特性
 - 通过自定义编辑器自动接管 `*.jsonl` 文件，优先级为 default。
 - 扩展会读取 `.jsonl` 文件内容并通过 Webview 渲染。页面中会在 `#jsonl-root` 容器内以逐行的方式显示内容（带行号）。
@@ -165,7 +171,7 @@ Trajectory Browser 是一个简洁高效的在线工具，专为可视化和浏�
 
 ### 安装
 - 从 VS Marketplace 安装：在 VS Code 中搜索 “TrajV JSONL Viewer”，或访问商店页面安装：
-	- https://marketplace.visualstudio.com/items?itemName=linxueyuanstudio.trajv-jsonl-viewer
+	- https://marketplace.visualstudio.com/items?itemName=LinXueyuanStdio.trajv-jsonl-viewer
 - 本地安装 `.vsix`：
 	1. 打包：`npm run package`
 	2. VS Code 命令面板：Install from VSIX...，选择生成的 `.vsix`
