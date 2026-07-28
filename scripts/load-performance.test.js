@@ -7,6 +7,7 @@ const root = path.resolve(__dirname, '..');
 const extensionTs = fs.readFileSync(path.join(root, 'src', 'extension.ts'), 'utf8');
 const templateHtml = fs.readFileSync(path.join(root, 'media', 'template-index.html'), 'utf8');
 const rootIndexHtml = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const firstStyleBlock = (html) => html.match(/<style[^>]*>([\s\S]*?)<\/style>/i)?.[1] || '';
 
 test('VS Code custom editor streams by webview URI instead of posting full content', () => {
   assert.match(extensionTs, /stat\(document\.uri\)/);
@@ -33,6 +34,12 @@ test('VS Code custom editor always uses bundled template, not workspace index.ht
   assert.doesNotMatch(extensionTs, /path\.join\(baseRoot,\s*'index\.html'\)/);
 });
 
+test('bundled VS Code template hides upload controls while plain index keeps them visible', () => {
+  assert.match(firstStyleBlock(templateHtml), /#fileArea,\s*#trajectorySelect\s*\{\s*display:\s*none\s*!important/);
+  assert.doesNotMatch(firstStyleBlock(rootIndexHtml), /#fileArea,\s*#trajectorySelect\s*\{\s*display:\s*none\s*!important/);
+  assert.match(extensionTs, /const preHideCss = `<style id="vscode-hide-style">#fileArea, #trajectorySelect \{ display: none !important; \}<\/style>`/);
+});
+
 test('HTML template exposes visible load progress and interruptible parsing', () => {
   assert.match(templateHtml, /id="loadProgress"/);
   assert.match(templateHtml, /id="loadProgressBar"/);
@@ -48,10 +55,6 @@ test('VS Code message handler delegates to async loaders without synchronous con
   assert.match(templateHtml, /function\s+waitForInitialPaint/);
   assert.match(templateHtml, /msg\.type === 'loadUri'/);
   assert.doesNotMatch(templateHtml, /parseJSONL\(content\)/);
-});
-
-test('root index stays in sync with bundled template', () => {
-  assert.equal(rootIndexHtml, templateHtml);
 });
 
 test('completed loads hide progress and show filename with file size', () => {
