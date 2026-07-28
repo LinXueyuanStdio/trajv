@@ -182,6 +182,22 @@
   .tool-call-args{border:1px solid #222b33;background:#0f1215;padding:.4rem .5rem;border-radius:4px;overflow:auto;max-height:260px;}
   .tool-call-args code{font-size:.65rem;}
   .tool-call-error{color:#d9534f;font-size:.6rem;}
+  /* --- Reasoning blocks in content parts --- */
+  .part-reasoning{border:1px solid #483d6b;background:#1a1528;border-radius:6px;padding:.45rem .55rem;font-size:.72rem;line-height:1.32;}
+  .part-reasoning .part-tag{background:#6b4eab;color:#e8dfff;}
+  .part-reasoning-body{flex:1 1 auto;min-width:0;}
+  .part-reasoning-summary{white-space:pre-wrap;word-break:break-word;color:#c4b5e0;font-style:italic;}
+  .part-reasoning-summary+.part-reasoning-summary{margin-top:.25rem;}
+  /* --- Function call/output in content parts --- */
+  .part-fn-call{border:1px solid var(--border);background:#101317;border-radius:6px;overflow:hidden;margin:.15rem 0;}
+  .part-fn-header{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;padding:.35rem .55rem;background:#1c2127;border-bottom:1px solid var(--border);font-family:ui-monospace,monospace;font-size:.68rem;}
+  .part-fn-header .tc-name{color:#ffd166;font-weight:600;}
+  .part-fn-header .tc-id{color:#56b6c2;font-size:.6rem;}
+  .part-fn-header .tc-type{background:#30363d;color:#cdd3d8;padding:2px 6px;border-radius:999px;font-size:.5rem;letter-spacing:.4px;}
+  .part-fn-body{padding:.4rem .5rem;font-family:ui-monospace,monospace;font-size:.68rem;line-height:1.28;overflow:auto;max-height:360px;}
+  .part-fn-body pre{margin:0;background:#0f1215;border:1px solid #222b33;border-radius:4px;padding:.4rem .5rem;overflow:auto;}
+  .part-fn-output-items{display:flex;flex-direction:column;gap:.3rem;}
+  .part-fn-output-items>div{white-space:pre-wrap;word-break:break-word;}
   /* highlight.js minimal dark theme */
   .code-block code{display:block;white-space:pre;}
   .hljs{color:#abb2bf;background:#0f1215;}
@@ -805,7 +821,11 @@
   }
 
   /* (Removed old createMessageEl version to avoid duplication) */
-  function createMessageEl(msg,idx,kind,isAnswer,editedFlag=false){const div=document.createElement('div');const role=(msg.role||msg.sender||(kind==='input'?'user':'assistant'));const collapsedDefault=role==='system';div.className='message'+(collapsedDefault?' collapsed':'');const metaItems=[];if(msg.name)metaItems.push('name='+msg.name);if(msg.type)metaItems.push(msg.type);const callId=msg.tool_call_id||msg.call_id; if(callId) metaItems.push('call_id='+callId);if(Array.isArray(msg.tool_calls)&&msg.tool_calls.length)metaItems.push('tool_calls='+msg.tool_calls.length);const metaLine=metaItems.join(' • ');const header=document.createElement('div');header.className='msg-header';header.innerHTML=`<span class="arrow">▶</span><span class="msg-role">${escapeHtml(role)}</span><span>#${idx+1}</span>${metaLine?'<span>'+escapeHtml(metaLine)+'</span>':''}${editedFlag?`<span class="edited-badge">${t('edited')}</span>`:''}`;header.addEventListener('click',()=>{div.classList.toggle('collapsed');});div.appendChild(header);const body=document.createElement('div');body.className='msg-body';if(Array.isArray(msg.content) && msg.content.some(p=>p&&typeof p==='object'&&p.type)){body.appendChild(renderTypedParts(msg.content));} else {const contentText=deriveContent(msg);body.appendChild(renderRichContent(contentText));}
+  // Responses-API style items appear as top-level entries of input_messages
+  // (no `role`, no `content`) instead of parts nested inside a message.
+  const RESPONSES_ITEM_ROLE={reasoning:'assistant',function_call:'assistant',function_call_output:'tool'};
+  function isResponsesItem(msg){return !!msg&&typeof msg==='object'&&!msg.role&&!msg.sender&&Object.prototype.hasOwnProperty.call(RESPONSES_ITEM_ROLE,msg.type);}
+  function createMessageEl(msg,idx,kind,isAnswer,editedFlag=false){const div=document.createElement('div');const responsesItem=isResponsesItem(msg);const role=(msg.role||msg.sender||(responsesItem?RESPONSES_ITEM_ROLE[msg.type]:(kind==='input'?'user':'assistant')));const collapsedDefault=role==='system';div.className='message'+(collapsedDefault?' collapsed':'');const metaItems=[];if(msg.name)metaItems.push('name='+msg.name);if(msg.type)metaItems.push(msg.type);const callId=msg.tool_call_id||msg.call_id; if(callId) metaItems.push('call_id='+callId);if(Array.isArray(msg.tool_calls)&&msg.tool_calls.length)metaItems.push('tool_calls='+msg.tool_calls.length);const metaLine=metaItems.join(' • ');const header=document.createElement('div');header.className='msg-header';header.innerHTML=`<span class="arrow">▶</span><span class="msg-role">${escapeHtml(role)}</span><span>#${idx+1}</span>${metaLine?'<span>'+escapeHtml(metaLine)+'</span>':''}${editedFlag?`<span class="edited-badge">${t('edited')}</span>`:''}`;header.addEventListener('click',()=>{div.classList.toggle('collapsed');});div.appendChild(header);const body=document.createElement('div');body.className='msg-body';if(responsesItem){body.appendChild(renderTypedParts([msg]));} else if(Array.isArray(msg.content) && msg.content.some(p=>p&&typeof p==='object'&&p.type)){body.appendChild(renderTypedParts(msg.content));} else {const contentText=deriveContent(msg);body.appendChild(renderRichContent(contentText));}
     if(Array.isArray(msg.tool_calls)&&msg.tool_calls.length){body.appendChild(renderToolCalls(msg.tool_calls));}
   // Only render bottom image gallery when content doesn't already include images
   if(!(Array.isArray(msg.content)&&msg.content.some(p=>p&&typeof p==='object'&&(p.type==='image'||p.type==='image_url')))){
@@ -834,7 +854,51 @@
     return pre;}
   // After hljs loads, process batched line highlighting
   const observerHL=setInterval(()=>{if(window.hljs&&window.hljs.highlight){const pendingLineObjs=_hlPending.filter(o=>o.__batchLines);_hlPending.splice(0,_hlPending.length);pendingLineObjs.forEach(obj=>{[...obj.linesRef.querySelectorAll('.ln-code')].forEach(codeNode=>{const tmp=document.createElement('code');tmp.className='language-'+obj.lang;tmp.textContent=codeNode.textContent;window.hljs.highlightElement(tmp);codeNode.innerHTML=tmp.innerHTML;});});} },300);
-  function renderTypedParts(parts){const wrap=document.createElement('div');wrap.className='msg-lines';parts.forEach(part=>{if(!part||typeof part!=='object')return;const line=document.createElement('div');line.className='part-line';const tag=document.createElement('span');tag.className='part-tag';tag.textContent=(part.type||'data').toUpperCase();line.appendChild(tag);if(part.type==='image'||part.type==='image_url'){let src=null;if(part.data)src=part.data.startsWith('data:')?part.data:'data:image/png;base64,'+part.data;else if(part.image_url)src=typeof part.image_url==='string'?part.image_url:part.image_url.url;else if(part.url)src=part.url;if(src){line.appendChild(buildImageWithZoom(src));} } else {const txtHolder=document.createElement('span');txtHolder.className='part-text';const raw=part.text||part.content||part.value||JSON.stringify(part);const str=typeof raw==='string'?raw:JSON.stringify(raw);txtHolder.innerHTML=highlightXml(inlineMarkdown(str));line.appendChild(txtHolder);}wrap.appendChild(line);});return wrap;}
+  function renderTypedParts(parts){const wrap=document.createElement('div');wrap.className='msg-lines';parts.forEach(part=>{if(!part||typeof part!=='object')return;
+    // --- Reasoning block ---
+    if(part.type==='reasoning'){const block=document.createElement('div');block.className='part-line part-reasoning';const tag=document.createElement('span');tag.className='part-tag';tag.textContent='REASONING';block.appendChild(tag);
+      let summaries=Array.isArray(part.summary)?part.summary:part.summary?[part.summary]:[];
+      // Newer Responses payloads carry the trace in `content` (reasoning_text) or a bare `text`.
+      if(!summaries.length&&Array.isArray(part.content))summaries=part.content;
+      if(!summaries.length&&typeof part.text==='string')summaries=[part.text];
+      const rbody=document.createElement('div');rbody.className='part-reasoning-body';
+      summaries.forEach(s=>{if(!s)return;const div=document.createElement('div');div.className='part-reasoning-summary';div.textContent=typeof s==='string'?s:(s.text||JSON.stringify(s));rbody.appendChild(div);});
+      if(!summaries.length&&part.encrypted_content){const div=document.createElement('div');div.className='part-reasoning-summary';div.textContent='(encrypted reasoning content)';rbody.appendChild(div);}
+      block.appendChild(rbody);wrap.appendChild(block);return;}
+    // --- Function call block ---
+    if(part.type==='function_call'){const block=document.createElement('div');block.className='part-fn-call';
+      const hdr=document.createElement('div');hdr.className='part-fn-header';
+      const fnName=part.name||'unknown';const cid=part.call_id||part.id||'';
+      hdr.innerHTML=`<span class="tc-type">FUNCTION CALL</span><span class="tc-name">${escapeHtml(fnName)}</span>${cid?`<span class="tc-id">(${escapeHtml(cid)})</span>`:''}`;
+      block.appendChild(hdr);
+      let argText=part.arguments||'';let parsed=null;let parseOk=false;
+      if(typeof argText==='string'){try{parsed=JSON.parse(argText);parseOk=true;}catch{}}
+      else if(argText&&typeof argText==='object'){parsed=argText;parseOk=true;}
+      const body=document.createElement('div');body.className='part-fn-body';
+      if(fnName==='CodeInterpreter'&&parsed&&typeof parsed==='object'&&parsed.code){
+        body.appendChild(createCodeBlock(String(parsed.code),'python'));
+        const rk=Object.keys(parsed).filter(k=>k!=='code');
+        if(rk.length){const ro={};rk.forEach(k=>ro[k]=parsed[k]);const pre=document.createElement('pre');pre.innerHTML=syntaxHighlight(escapeHtml(JSON.stringify(ro,null,2)));body.appendChild(pre);}
+      } else if(parseOk){const pre=document.createElement('pre');pre.innerHTML=syntaxHighlight(escapeHtml(JSON.stringify(parsed,null,2)));body.appendChild(pre);
+      } else {body.textContent=String(argText);}
+      block.appendChild(body);wrap.appendChild(block);return;}
+    // --- Function call output block ---
+    if(part.type==='function_call_output'){const block=document.createElement('div');block.className='part-fn-call';
+      const hdr=document.createElement('div');hdr.className='part-fn-header';const cid=part.call_id||'';
+      hdr.innerHTML=`<span class="tc-type">OUTPUT</span>${cid?`<span class="tc-id">(${escapeHtml(cid)})</span>`:''}`;
+      block.appendChild(hdr);
+      const body=document.createElement('div');body.className='part-fn-body';
+      if(Array.isArray(part.output)){const items=document.createElement('div');items.className='part-fn-output-items';
+        part.output.forEach(item=>{if(!item)return;const div=document.createElement('div');
+          if(typeof item==='string'){div.innerHTML=highlightXml(inlineMarkdown(item));}
+          else if(item.type==='image'||(item.type&&item.type.startsWith('image'))){let src=item.data||item.url||'';if(src&&!src.startsWith('data:')&&!src.startsWith('http'))src='data:image/png;base64,'+src;if(src)div.appendChild(buildImageWithZoom(src));}
+          else{const raw=item.text||item.content||item.value||JSON.stringify(item);const str=typeof raw==='string'?raw:JSON.stringify(raw);div.innerHTML=highlightXml(inlineMarkdown(str));}
+          items.appendChild(div);});body.appendChild(items);
+      } else if(typeof part.output==='string'){body.innerHTML=highlightXml(inlineMarkdown(part.output));
+      } else if(part.output!=null){const pre=document.createElement('pre');pre.textContent=JSON.stringify(part.output,null,2);body.appendChild(pre);}
+      block.appendChild(body);wrap.appendChild(block);return;}
+    // --- Default: image / text ---
+    const line=document.createElement('div');line.className='part-line';const tag=document.createElement('span');tag.className='part-tag';tag.textContent=(part.type||'data').toUpperCase();line.appendChild(tag);if(part.type==='image'||part.type==='image_url'){let src=null;if(part.data)src=part.data.startsWith('data:')?part.data:'data:image/png;base64,'+part.data;else if(part.image_url)src=typeof part.image_url==='string'?part.image_url:part.image_url.url;else if(part.url)src=part.url;if(src){line.appendChild(buildImageWithZoom(src));} } else {const txtHolder=document.createElement('span');txtHolder.className='part-text';const raw=part.text||part.content||part.value||JSON.stringify(part);const str=typeof raw==='string'?raw:JSON.stringify(raw);txtHolder.innerHTML=highlightXml(inlineMarkdown(str));line.appendChild(txtHolder);}wrap.appendChild(line);});return wrap;}
   function collectImages(msg){const arr=[];const pushIf=(src)=>{if(src)arr.push(src);};if(msg.image)pushIf(msg.image);if(msg.image_url)pushIf(typeof msg.image_url==='string'?msg.image_url:msg.image_url.url);if(Array.isArray(msg.images))msg.images.forEach(pushIf);if(Array.isArray(msg.content))msg.content.forEach(part=>{if(!part||typeof part!=='object')return;try{if(part.type==='image_url'&&part.image_url)pushIf(typeof part.image_url==='string'?part.image_url:part.image_url.url);else if(part.type==='image'&&part.data)pushIf(part.data.startsWith('data:')?part.data:'data:image/png;base64,'+part.data);}catch{}});return arr;}
   function renderRichContent(text){const wrap=document.createElement('div');wrap.className='msg-content';wrap.appendChild(buildMarkdownLines(text));return wrap;}
   function buildMarkdownLines(text){const container=document.createElement('div');container.className='msg-lines';if(!text){return container;}const tokens=parseMarkdownToTokens(text);tokens.forEach(t=>{if(t.type==='code'){const pre=document.createElement('pre');pre.className='code-block';const code=document.createElement('code');code.textContent=t.content;pre.appendChild(code);if(t.lang){const langTag=document.createElement('span');langTag.className='code-lang';langTag.textContent=t.lang;pre.appendChild(langTag);}container.appendChild(pre);}else if(t.type==='line'){const div=document.createElement('div');div.className='msg-line';div.innerHTML=highlightXml(inlineMarkdown(t.content));container.appendChild(div);} });return container;}
