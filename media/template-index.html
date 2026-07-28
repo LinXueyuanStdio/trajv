@@ -25,7 +25,7 @@
       --jse-text-color-inverse: var(--bg);
     }
     :root { color-scheme: light dark; --bg:#1e1f22; --panel:#2a2d31; --panel-alt:#35393f; --border:#444c56; --accent:#3d82f6; --accent-hover:#1d5fd1; --danger:#d9534f; --text:#e6e6e6; --muted:#9aa0a6; font-family: system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif; }
-    body { margin:0; background:var(--bg); color:var(--text); display:flex; flex-direction:column; min-height:100vh; }
+    html, body { margin:0; padding:0; } body { background:var(--bg); color:var(--text); display:flex; flex-direction:column; min-height:100vh; }
     header { padding:.75rem 1rem; background:var(--panel); display:flex; flex-wrap:wrap; gap:.75rem; align-items:center; border-bottom:1px solid var(--border); }
     h1 { font-size:1.1rem; margin:0 .75rem 0 0; font-weight:600; }
   /* Unified file area */
@@ -510,6 +510,7 @@
     // --- Stream JSONL from File to support very large files ---
     async function parseJSONLStream(stream,onProgress,options={}){
       const signal=options.signal;
+      const onStep=options.onStep;
       const totalBytes=Number(options.totalBytes)||0;
       const reader = stream.getReader();
       const decoder = new TextDecoder();
@@ -518,6 +519,7 @@
       let lineNo=0;
       let lastTick=0;
       let lastYield=0;
+      let lastStepTick=0;
       let loadedBytes=0;
       function pushLine(line){
         const trimmed=line.trim();
@@ -552,11 +554,18 @@
           lastTick=now;
           try{ onProgress({lines:lineNo,steps:steps.length,loadedBytes,totalBytes}); }catch{}
         }
+        if(typeof onStep==='function' && steps.length>0 && now-lastStepTick>200){
+          lastStepTick=now;
+          try{ onStep(steps); }catch{}
+        }
       }
       buffer += decoder.decode();
       if(buffer.length){ lineNo++; pushLine(buffer); }
       if(typeof onProgress==='function'){
         try{ onProgress({lines:lineNo,steps:steps.length,loadedBytes:totalBytes||loadedBytes,totalBytes,done:true}); }catch{}
+      }
+      if(typeof onStep==='function' && steps.length>0){
+        try{ onStep(steps); }catch{}
       }
       return {steps};
       }catch(e){
@@ -579,7 +588,21 @@
       try{
         throwIfAborted(task.controller.signal);
         showLoadProgress(`解析 ${f.name}`,0,f.size,0);
-        const {steps}=await parseJSONLFile(f,(p)=>{updateLoadProgress({...p,label:`解析 ${f.name}`});},{signal:task.controller.signal,totalBytes:f.size});
+        let streamInit=false;
+        const {steps}=await parseJSONLFile(f,(p)=>{updateLoadProgress({...p,label:`解析 ${f.name}`});},{signal:task.controller.signal,totalBytes:f.size,onStep:(accSteps)=>{
+          if(!isCurrentLoadTask(task))return;
+          if(!streamInit){
+            streamInit=true;
+            const mtime=typeof f.lastModified==='number'?f.lastModified:Date.now();
+            state.files.set(f.name,{steps:accSteps,mtime});
+            state.currentFile=f.name;state.currentIndex=0;
+            refreshFileSelect();
+          }else{
+            const entry=state.files.get(f.name);
+            if(entry)entry.steps=accSteps;
+            refreshStreamingUI(f.name);
+          }
+        }});
         if(!isCurrentLoadTask(task))return;
         const mtime=typeof f.lastModified==='number'?f.lastModified:Date.now();
         state.files.set(f.name,{steps,mtime});
@@ -611,7 +634,21 @@
         throwIfAborted(task.controller.signal);
         if(!f.name.toLowerCase().endsWith('.jsonl')){skipped++;continue;}
         showLoadProgress(`解析 ${display}`,0,f.size,0);
-        const {steps}=await parseJSONLFile(f,(p)=>{updateLoadProgress({...p,label:`解析 ${display}`});},{signal:task.controller.signal,totalBytes:f.size});
+        let streamInit=false;
+        const {steps}=await parseJSONLFile(f,(p)=>{updateLoadProgress({...p,label:`解析 ${display}`});},{signal:task.controller.signal,totalBytes:f.size,onStep:(accSteps)=>{
+          if(!isCurrentLoadTask(task))return;
+          if(!streamInit){
+            streamInit=true;
+            const mtime=typeof f.lastModified==='number'?f.lastModified:Date.now();
+            state.files.set(display,{steps:accSteps,mtime});
+            state.currentFile=display;state.currentIndex=0;
+            refreshFileSelect();
+          }else{
+            const entry=state.files.get(display);
+            if(entry)entry.steps=accSteps;
+            refreshStreamingUI(display);
+          }
+        }});
         if(!isCurrentLoadTask(task))return;
         const mtime=typeof f.lastModified==='number'?f.lastModified:Date.now();
         state.files.set(display,{steps,mtime});
@@ -637,6 +674,22 @@
   function refreshFileSelect(){trajectorySelect.innerHTML='';for(const name of state.files.keys()){const opt=document.createElement('option');opt.value=name;opt.textContent=name+' ('+state.files.get(name).steps.length+')';trajectorySelect.appendChild(opt);}trajectorySelect.disabled=!state.files.size;if(state.files.size){if(!state.currentFile||!state.files.has(state.currentFile))state.currentFile=trajectorySelect.options[0].value;trajectorySelect.value=state.currentFile;state.currentIndex=0;enterCompact();render();}else {clearDisplay();exitCompact();}}
     trajectorySelect.addEventListener('change',()=>{state.currentFile=trajectorySelect.value;state.currentIndex=0;render();});
   function clearDisplay(){inputMessagesEl.innerHTML='';outputMessagesEl.innerHTML='';totalSteps.textContent='/ 0';[firstStep,prevStep,nextStep,lastStep,jumpStep,exportCurrent,exportTrajectory,stepDetailsBtn].forEach(b=>b.disabled=true);disableModeButtons(true);}
+  function refreshStreamingUI(name){
+    const entry=state.files.get(name);
+    if(!entry)return;
+    const total=entry.steps.length;
+    for(const opt of trajectorySelect.options){if(opt.value===name){opt.textContent=name+' ('+total+')';break;}}
+    totalSteps.textContent='/ '+total;
+    jumpStep.disabled=false;
+    jumpStep.value=Math.min(state.currentIndex+1,total||1);
+    [firstStep,prevStep,nextStep,lastStep,exportCurrent,exportTrajectory,stepDetailsBtn].forEach(b=>b.disabled=false);
+    disableModeButtons(false);
+    firstStep.disabled=prevStep.disabled=state.currentIndex===0;
+    lastStep.disabled=nextStep.disabled=state.currentIndex>=total-1;
+    if(state.currentFile===name&&state.currentIndex<total){
+      renderMessages(entry.steps[state.currentIndex]);
+    }
+  }
   function disableModeButtons(disabled){document.querySelectorAll('.mode-buttons button').forEach(b=>b.disabled=disabled);}
     function render(){if(!state.currentFile){clearDisplay();applyLangStatic();return;}const {steps}=state.files.get(state.currentFile);const total=steps.length;if(!total){clearDisplay();applyLangStatic();return;}state.currentIndex=Math.min(Math.max(0,state.currentIndex),total-1);const stepObj=steps[state.currentIndex];totalSteps.textContent='/ '+total;jumpStep.disabled=false;jumpStep.value=state.currentIndex+1;[firstStep,prevStep,nextStep,lastStep,exportCurrent,exportTrajectory,stepDetailsBtn].forEach(b=>b.disabled=false);disableModeButtons(false);firstStep.disabled=prevStep.disabled=state.currentIndex===0;lastStep.disabled=nextStep.disabled=state.currentIndex===total-1;renderMessages(stepObj);updateModeButtonsUI();}
   // Initialize page - disable mode buttons initially
@@ -898,8 +951,8 @@
       } else if(part.output!=null){const pre=document.createElement('pre');pre.textContent=JSON.stringify(part.output,null,2);body.appendChild(pre);}
       block.appendChild(body);wrap.appendChild(block);return;}
     // --- Default: image / text ---
-    const line=document.createElement('div');line.className='part-line';const tag=document.createElement('span');tag.className='part-tag';tag.textContent=(part.type||'data').toUpperCase();line.appendChild(tag);if(part.type==='image'||part.type==='image_url'){let src=null;if(part.data)src=part.data.startsWith('data:')?part.data:'data:image/png;base64,'+part.data;else if(part.image_url)src=typeof part.image_url==='string'?part.image_url:part.image_url.url;else if(part.url)src=part.url;if(src){line.appendChild(buildImageWithZoom(src));} } else {const txtHolder=document.createElement('span');txtHolder.className='part-text';const raw=part.text||part.content||part.value||JSON.stringify(part);const str=typeof raw==='string'?raw:JSON.stringify(raw);txtHolder.innerHTML=highlightXml(inlineMarkdown(str));line.appendChild(txtHolder);}wrap.appendChild(line);});return wrap;}
-  function collectImages(msg){const arr=[];const pushIf=(src)=>{if(src)arr.push(src);};if(msg.image)pushIf(msg.image);if(msg.image_url)pushIf(typeof msg.image_url==='string'?msg.image_url:msg.image_url.url);if(Array.isArray(msg.images))msg.images.forEach(pushIf);if(Array.isArray(msg.content))msg.content.forEach(part=>{if(!part||typeof part!=='object')return;try{if(part.type==='image_url'&&part.image_url)pushIf(typeof part.image_url==='string'?part.image_url:part.image_url.url);else if(part.type==='image'&&part.data)pushIf(part.data.startsWith('data:')?part.data:'data:image/png;base64,'+part.data);}catch{}});return arr;}
+    const line=document.createElement('div');line.className='part-line';const tag=document.createElement('span');tag.className='part-tag';tag.textContent=(part.type||'data').toUpperCase();line.appendChild(tag);if(part.type==='image'||part.type==='image_url'||part.type==='input_image'){let src=null;if(part.data)src=part.data.startsWith('data:')?part.data:'data:image/png;base64,'+part.data;else if(part.image_url)src=typeof part.image_url==='string'?part.image_url:(part.image_url.url||part.image_url.image_url);else if(part.url)src=part.url;if(src){line.appendChild(buildImageWithZoom(src));} } else {const txtHolder=document.createElement('span');txtHolder.className='part-text';const raw=part.text||part.content||part.value||JSON.stringify(part);const str=typeof raw==='string'?raw:JSON.stringify(raw);txtHolder.innerHTML=highlightXml(inlineMarkdown(str));line.appendChild(txtHolder);}wrap.appendChild(line);});return wrap;}
+  function collectImages(msg){const arr=[];const pushIf=(src)=>{if(src)arr.push(src);};if(msg.image)pushIf(msg.image);if(msg.image_url)pushIf(typeof msg.image_url==='string'?msg.image_url:(msg.image_url.url||msg.image_url.image_url));if(Array.isArray(msg.images))msg.images.forEach(pushIf);if(Array.isArray(msg.content))msg.content.forEach(part=>{if(!part||typeof part!=='object')return;try{if((part.type==='image_url'||part.type==='input_image')&&part.image_url)pushIf(typeof part.image_url==='string'?part.image_url:(part.image_url.url||part.image_url.image_url));else if(part.type==='image'&&part.data)pushIf(part.data.startsWith('data:')?part.data:'data:image/png;base64,'+part.data);}catch{}});return arr;}
   function renderRichContent(text){const wrap=document.createElement('div');wrap.className='msg-content';wrap.appendChild(buildMarkdownLines(text));return wrap;}
   function buildMarkdownLines(text){const container=document.createElement('div');container.className='msg-lines';if(!text){return container;}const tokens=parseMarkdownToTokens(text);tokens.forEach(t=>{if(t.type==='code'){const pre=document.createElement('pre');pre.className='code-block';const code=document.createElement('code');code.textContent=t.content;pre.appendChild(code);if(t.lang){const langTag=document.createElement('span');langTag.className='code-lang';langTag.textContent=t.lang;pre.appendChild(langTag);}container.appendChild(pre);}else if(t.type==='line'){const div=document.createElement('div');div.className='msg-line';div.innerHTML=highlightXml(inlineMarkdown(t.content));container.appendChild(div);} });return container;}
   function parseMarkdownToTokens(text){const lines=text.replace(/\r/g,'').split('\n');const tokens=[];let inCode=false;let codeLang='';let codeAccum=[];for(let i=0;i<lines.length;i++){const line=lines[i];const fence=line.match(/^```(.*)$/);if(fence){if(!inCode){inCode=true;codeLang=fence[1].trim();codeAccum=[];}else{tokens.push({type:'code',lang:codeLang,content:codeAccum.join('\n')});inCode=false;codeLang='';codeAccum=[];}continue;}if(inCode){codeAccum.push(line);continue;}tokens.push({type:'line',content:line});}if(inCode){tokens.push({type:'code',lang:codeLang,content:codeAccum.join('\n')});}return tokens;}
@@ -1106,10 +1159,11 @@
     }
     async function parseJSONLText(text,onProgress,options={}){
       const signal=options.signal;
+      const onStep=options.onStep;
       const totalBytes=Number(options.totalBytes)||new TextEncoder().encode(text).byteLength;
       const lines=text.split(/\r?\n/);
       const steps=[];
-      let loadedBytes=0,lastTick=0,lastYield=0;
+      let loadedBytes=0,lastTick=0,lastStepTick=0,lastYield=0;
       for(let i=0;i<lines.length;i++){
         throwIfAborted(signal);
         const line=lines[i];
@@ -1122,10 +1176,17 @@
           lastTick=now;
           try{onProgress({lines:i+1,steps:steps.length,loadedBytes:Math.min(loadedBytes,totalBytes),totalBytes});}catch{}
         }
+        if(typeof onStep==='function'&&steps.length>0&&now-lastStepTick>200){
+          lastStepTick=now;
+          try{onStep(steps);}catch{}
+        }
         if(now-lastYield>16){lastYield=now;await yieldToBrowser();}
       }
       if(typeof onProgress==='function'){
         try{onProgress({lines:lines.length,steps:steps.length,loadedBytes:totalBytes,totalBytes,done:true});}catch{}
+      }
+      if(typeof onStep==='function'&&steps.length>0){
+        try{onStep(steps);}catch{}
       }
       return {steps};
     }
@@ -1163,18 +1224,35 @@
         const response=await fetch(msg.webviewUri);
         throwIfAborted(task.controller.signal);
         if(!response.ok)throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        let streamInit=false;
+        const streamOpts={signal:task.controller.signal,totalBytes,onStep:(accSteps)=>{
+          if(!isCurrentLoadTask(task))return;
+          if(!streamInit){
+            streamInit=true;
+            state.files.clear();
+            state.files.set(name,{steps:accSteps,mtime:msg.mtime||Date.now()});
+            state.currentFile=name;state.currentIndex=0;
+            refreshFileSelect();
+          }else{
+            const entry=state.files.get(name);
+            if(entry)entry.steps=accSteps;
+            refreshStreamingUI(name);
+          }
+        }};
         let parsed;
         if(response.body){
-          parsed=await parseJSONLStream(response.body,(p)=>{updateLoadProgress({...p,label:`解析 ${name}`});},{signal:task.controller.signal,totalBytes});
+          parsed=await parseJSONLStream(response.body,(p)=>{updateLoadProgress({...p,label:`解析 ${name}`});},streamOpts);
         }else{
           const blob=await response.blob();
-          parsed=await parseJSONLFile(new File([blob],name,{type:'application/jsonl'}),(p)=>{updateLoadProgress({...p,label:`解析 ${name}`});},{signal:task.controller.signal,totalBytes:totalBytes||blob.size});
+          parsed=await parseJSONLFile(new File([blob],name,{type:'application/jsonl'}),(p)=>{updateLoadProgress({...p,label:`解析 ${name}`});},{...streamOpts,totalBytes:totalBytes||blob.size});
         }
         if(!isCurrentLoadTask(task))return;
-        state.files.clear();
-        state.files.set(name,{steps:parsed.steps||[],mtime:msg.mtime||Date.now()});
-        state.currentFile=name;state.currentIndex=0;
-        refreshFileSelect();
+        if(!streamInit){
+          state.files.clear();
+          state.files.set(name,{steps:parsed.steps||[],mtime:msg.mtime||Date.now()});
+          state.currentFile=name;state.currentIndex=0;
+          refreshFileSelect();
+        }
         completeLoadProgress(name,totalBytes||Number(msg.size)||0,(parsed.steps||[]).length,fullPath);
         activeLoadTask=null;
       }catch(err){
@@ -1196,12 +1274,28 @@
         showLoadProgress(`解析 ${name}`,0,totalBytes,0);
         await waitForInitialPaint();
         throwIfAborted(task.controller.signal);
-        const parsed=await parseJSONLText(content,(p)=>{updateLoadProgress({...p,label:`解析 ${name}`});},{signal:task.controller.signal,totalBytes});
+        let streamInit=false;
+        const parsed=await parseJSONLText(content,(p)=>{updateLoadProgress({...p,label:`解析 ${name}`});},{signal:task.controller.signal,totalBytes,onStep:(accSteps)=>{
+          if(!isCurrentLoadTask(task))return;
+          if(!streamInit){
+            streamInit=true;
+            state.files.clear();
+            state.files.set(name,{steps:accSteps,mtime:msg.mtime||Date.now()});
+            state.currentFile=name;state.currentIndex=0;
+            refreshFileSelect();
+          }else{
+            const entry=state.files.get(name);
+            if(entry)entry.steps=accSteps;
+            refreshStreamingUI(name);
+          }
+        }});
         if(!isCurrentLoadTask(task))return;
-        state.files.clear();
-        state.files.set(name,{steps:parsed.steps||[],mtime:msg.mtime||Date.now()});
-        state.currentFile=name;state.currentIndex=0;
-        refreshFileSelect();
+        if(!streamInit){
+          state.files.clear();
+          state.files.set(name,{steps:parsed.steps||[],mtime:msg.mtime||Date.now()});
+          state.currentFile=name;state.currentIndex=0;
+          refreshFileSelect();
+        }
         completeLoadProgress(name,totalBytes,(parsed.steps||[]).length,fullPath);
         activeLoadTask=null;
       }catch(err){
