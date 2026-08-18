@@ -23,7 +23,7 @@
       --jse-text-color-inverse: var(--bg);
     }
     :root { color-scheme: light dark; --bg:#1e1f22; --panel:#2a2d31; --panel-alt:#35393f; --border:#444c56; --accent:#3d82f6; --accent-hover:#1d5fd1; --danger:#d9534f; --text:#e6e6e6; --muted:#9aa0a6; font-family: system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif; }
-    html, body { margin:0; padding:0; } body { background:var(--bg); color:var(--text); display:flex; flex-direction:column; min-height:100vh; }
+    html, body { margin:0; padding:0; box-sizing:border-box; } *, *::before, *::after { box-sizing:inherit; } body { background:var(--bg); color:var(--text); display:flex; flex-direction:column; min-height:100vh; }
     header { padding:.75rem 1rem; background:var(--panel); display:flex; flex-wrap:wrap; gap:.75rem; align-items:center; border-bottom:1px solid var(--border); }
     h1 { font-size:1.1rem; margin:0 .75rem 0 0; font-weight:600; }
   /* Unified file area */
@@ -57,7 +57,7 @@
   .mode-buttons button:disabled{opacity:.4;cursor:not-allowed;}
     .grow{flex:1 1 auto;} .header-right{display:flex;align-items:center;justify-content:flex-end;gap:.6rem;min-width:0;flex:0 1 auto;max-width:min(420px,40vw);} .status{font-size:.8rem; color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;} .status.loaded-file{flex:1 1 auto;} .load-progress{width:min(340px,34vw);min-width:220px;display:flex;flex-direction:column;gap:3px;color:var(--muted);font-size:.66rem;} .load-progress[hidden]{display:none;} .load-progress-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);} .load-progress-meter{position:relative;height:16px;border-radius:4px;background:#1d2228;border:1px solid #0005;overflow:hidden;} .load-progress-meter>div{position:absolute;inset:0 auto 0 0;width:0%;background:rgba(61,130,246,.28);transition:width .12s linear;} .load-progress-bytes{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:0 .45rem;font-family:ui-monospace,SFMono-Regular,Monaco,Menlo,Consolas,"Liberation Mono",monospace;color:#cdd3d8;text-shadow:0 1px 1px #0008;white-space:nowrap;} .collapse-bar{background:var(--panel-alt); padding:.4rem .9rem; display:flex; gap:1rem; align-items:center; cursor:pointer; user-select:none; border-bottom:1px solid var(--border);} .collapse-bar h2{font-size:.8rem; margin:0; letter-spacing:.5px; font-weight:600;} .chevron{transition:transform .25s ease;} .collapsed .chevron{transform:rotate(-90deg);} #details{display:none; padding:.75rem .9rem; background:var(--panel-alt); border-bottom:1px solid var(--border);} pre{margin:0; font-family:ui-monospace,SFMono-Regular,Monaco,Menlo,Consolas,"Liberation Mono",monospace; font-size:.75rem; line-height:1.3; background:#111a; padding:.5rem .6rem; border:1px solid #444a; border-radius:4px; overflow:auto; max-height:320px;}
     code.json-key{color:#8ab4f8;} code.json-string{color:#98c379;} code.json-number{color:#d19a66;} code.json-boolean{color:#56b6c2;} code.json-null{color:#c678dd;}
-    main{flex:1 1 auto; display:flex; min-height:0;} .columns{display:flex; gap:1rem; padding:1rem; width:100%; min-height:0; flex:1;} .col{flex:1 1 50%; display:flex; flex-direction:column; gap:.75rem; min-height:0;} .panel-header{display:flex; gap:.5rem; align-items:center; margin:0 0 .5rem;} .panel-title{font-size:.75rem; font-weight:600; letter-spacing:.5px; margin:0; color:var(--muted); text-transform:uppercase;} .mode-select{font-size:.7rem; padding:.25rem .4rem;}
+    main{flex:1 1 auto; display:flex; min-height:0;} .columns{display:flex; gap:1rem; padding:1rem; width:100%; min-height:0; flex:1;} .col{flex:1 1 50%; display:flex; flex-direction:column; gap:.75rem; min-height:0; overflow:hidden;} .panel-header{display:flex; gap:.5rem; align-items:center; margin:0 0 .5rem; flex-shrink:0;} .panel-title{font-size:.75rem; font-weight:600; letter-spacing:.5px; margin:0; color:var(--muted); text-transform:uppercase;} #inputMessages,#outputMessages{flex:1;min-height:0;overflow-y:auto;} .mode-select{font-size:.7rem; padding:.25rem .4rem;}
   .message{border:1px solid var(--border); background:var(--panel); padding:.4rem .55rem .55rem; border-radius:6px; display:flex; flex-direction:column; gap:.25rem;}
   .message.answer{box-shadow:0 0 0 1px var(--accent) inset;}
   .msg-header{display:flex; align-items:center; gap:.5rem; font-size:.65rem; letter-spacing:.5px; text-transform:uppercase; color:var(--muted); cursor:pointer; user-select:none;}
@@ -141,7 +141,59 @@
   .part-line img{max-width:180px; border:1px solid var(--border); border-radius:4px; background:#000;}
   .part-text a{color:#4da3ff; text-decoration:underline;}
   .msg-line a{color:#4da3ff; text-decoration:underline;}
-  .toolbar{display:flex; gap:.4rem; align-items:center;} .tag{background:var(--panel-alt); border:1px solid var(--border); padding:.15rem .4rem; border-radius:999px; font-size:.6rem; letter-spacing:.5px;} .two-col-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:.75rem; margin-top:.5rem;} .highlight-answer{background:var(--accent); color:#fff;} .nav-group{display:flex; gap:.4rem; align-items:center;} .jump-input{width:5ch; min-width:5ch; max-width:7ch; padding:.35rem .25rem; text-align:center;} #dropzone{border:2px dashed var(--border); margin:.25rem 1rem 0; padding:.75rem; text-align:center; font-size:.8rem; color:var(--muted); border-radius:6px;} #dropzone.dragover{border-color:var(--accent); color:var(--accent); background:#1b283b;} .footer{padding:.5rem .75rem; font-size:.65rem; text-align:right; color:var(--muted); border-top:1px solid var(--border);} .edited-flag{color:var(--accent);} @media (max-width:1100px){.columns{flex-direction:column;}}
+  .toolbar{display:flex; gap:.4rem; align-items:center;} .tag{background:var(--panel-alt); border:1px solid var(--border); padding:.15rem .4rem; border-radius:999px; font-size:.6rem; letter-spacing:.5px;} .two-col-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:.75rem; margin-top:.5rem;} .highlight-answer{background:var(--accent); color:#fff;}
+  /* Apple-style nav stepper */
+  .nav-stepper{display:inline-flex;align-items:center;background:var(--panel-alt);border:1px solid var(--border);border-radius:8px;overflow:hidden;height:30px;box-shadow:0 1px 2px rgba(0,0,0,.15);}
+  .nav-stepper .stepper-btn{display:inline-flex;align-items:center;justify-content:center;background:transparent;border:none;border-radius:0;color:var(--text);font-size:15px;line-height:1;cursor:pointer;height:100%;padding:0 7px;min-width:26px;transition:background .15s,color .15s;font-family:system-ui,-apple-system,sans-serif;}
+  .nav-stepper .stepper-btn:hover:not(:disabled){background:var(--accent);color:#fff;}
+  .nav-stepper .stepper-btn:active:not(:disabled){background:var(--accent-hover);}
+  .nav-stepper .stepper-btn:disabled{opacity:.25;cursor:not-allowed;}
+  .nav-stepper .stepper-display{display:flex;align-items:center;gap:3px;padding:0 10px;height:100%;font-size:.75rem;font-weight:500;color:var(--text);border-left:1px solid var(--border);border-right:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap;background:transparent;transition:background .15s;}
+  .nav-stepper .stepper-display:hover{background:rgba(255,255,255,.04);}
+  .nav-stepper .stepper-sep{color:var(--muted);font-weight:400;}
+  .nav-stepper .stepper-current{font-variant-numeric:tabular-nums;font-family:ui-monospace,SFMono-Regular,Monaco,Menlo,Consolas,monospace;color:var(--accent);min-width:1.5em;text-align:center;}
+  .nav-stepper .stepper-current.editing{background:var(--panel);border-radius:4px;padding:1px 4px;outline:2px solid var(--accent);outline-offset:-1px;color:var(--text);}
+  .nav-stepper .stepper-edit-input{background:transparent;border:none;color:var(--text);font-family:ui-monospace,SFMono-Regular,Monaco,Menlo,Consolas,monospace;font-size:.75rem;font-weight:500;width:3.5ch;text-align:center;padding:0;margin:0;outline:none;-moz-appearance:textfield;}
+  .nav-stepper .stepper-edit-input::-webkit-inner-spin-button,.nav-stepper .stepper-edit-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+  /* Icon system: mask-image from local SVG files, inherits currentColor */
+  .stepper-icon{display:inline-block;width:14px;height:14px;background:currentColor;mask-size:contain;mask-repeat:no-repeat;mask-position:center;-webkit-mask-size:contain;-webkit-mask-repeat:no-repeat;-webkit-mask-position:center;flex-shrink:0;}
+  .stepper-icon.chevron-left{-webkit-mask-image:url('media/chevron-left.svg');mask-image:url('media/chevron-left.svg');}
+  .stepper-icon.chevron-right{-webkit-mask-image:url('media/chevron-right.svg');mask-image:url('media/chevron-right.svg');}
+  .stepper-icon.chevrons-left{-webkit-mask-image:url('media/chevrons-left.svg');mask-image:url('media/chevrons-left.svg');}
+  .stepper-icon.chevrons-right{-webkit-mask-image:url('media/chevrons-right.svg');mask-image:url('media/chevrons-right.svg');}
+  .settings-icon{display:inline-block;width:16px;height:16px;background:currentColor;mask-size:contain;mask-repeat:no-repeat;mask-position:center;-webkit-mask-size:contain;-webkit-mask-repeat:no-repeat;-webkit-mask-position:center;-webkit-mask-image:url('media/gear.svg');mask-image:url('media/gear.svg');}
+  /* Export dropdown */
+  .dropdown-wrapper{position:relative;display:inline-flex;}
+  .dropdown-toggle{display:inline-flex;align-items:center;gap:4px;padding:.4rem .65rem;font-size:.8rem;line-height:1.2;}
+  .dropdown-toggle .dropdown-arrow{font-size:.55rem;transition:transform .2s;}
+  .dropdown-wrapper.open .dropdown-arrow{transform:rotate(180deg);}
+  .dropdown-menu{position:absolute;top:100%;left:0;margin-top:4px;background:var(--panel);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.45),0 0 0 1px rgba(0,0,0,.15);padding:4px;min-width:160px;z-index:100;display:none;flex-direction:column;gap:2px;}
+  .dropdown-wrapper.open .dropdown-menu{display:flex;}
+  .dropdown-menu button{display:block;width:100%;text-align:left;padding:.45rem .7rem;font-size:.78rem;border:none;background:transparent;border-radius:5px;color:var(--text);cursor:pointer;}
+  .dropdown-menu button:hover{background:var(--accent);color:#fff;}
+  /* Settings button */
+  .settings-btn{display:inline-flex;align-items:center;justify-content:center;background:var(--panel-alt);border:1px solid var(--border);border-radius:6px;padding:.4rem .5rem;cursor:pointer;transition:background .18s,border-color .18s;color:var(--text);}
+  .settings-btn:hover{background:var(--accent-hover);color:#fff;border-color:var(--accent-hover);}
+  /* Mac-style settings popover */
+  .settings-popover{position:absolute;top:100%;right:0;margin-top:8px;background:var(--panel);border:1px solid var(--border);border-radius:10px;box-shadow:0 10px 32px rgba(0,0,0,.5),0 0 0 1px rgba(0,0,0,.2);padding:6px;min-width:180px;z-index:200;display:none;flex-direction:column;gap:2px;}
+  .settings-popover.show{display:flex;}
+  .settings-popover::before{content:'';position:absolute;top:-6px;right:14px;width:12px;height:12px;background:var(--panel);border:1px solid var(--border);border-right:none;border-bottom:none;transform:rotate(45deg);}
+  .popover-section{display:flex;flex-direction:column;gap:1px;}
+  .popover-section-title{font-size:.55rem;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);padding:.35rem .6rem .2rem;}
+  .popover-option{display:flex;align-items:center;gap:.5rem;padding:.38rem .6rem;font-size:.75rem;border:none;background:transparent;border-radius:5px;color:var(--text);cursor:pointer;text-align:left;width:100%;}
+  .popover-option:hover{background:var(--accent);color:#fff;}
+  .popover-option .popover-check{width:1.2em;text-align:center;font-size:.7rem;color:var(--accent);visibility:hidden;}
+  .popover-option.active .popover-check{visibility:visible;}
+  .popover-option:hover .popover-check{color:#fff;}
+  .popover-divider{height:1px;background:var(--border);margin:4px 6px;}
+  /* Single column layout — let content flow naturally, page scrolls as one */
+  .columns.single-col{flex-direction:column;flex:none;}
+  .columns.single-col .col{flex:none;overflow:visible;}
+  .columns.single-col #inputMessages,.columns.single-col #outputMessages{flex:none;overflow-y:visible;}
+  /* Message font size */
+  .font-sm .msg-content{font-size:.77rem;} .font-sm .msg-line{font-size:.7rem;} .font-sm .part-text{font-size:.6rem;} .font-sm .tool-call{font-size:.58rem;} .font-sm .tool-call-args code{font-size:.55rem;} .font-sm .part-fn-body{font-size:.58rem;} .font-sm .json-mini-line{font-size:.56rem;} .font-sm .part-reasoning{font-size:.62rem;} .font-sm .json-tree{font-size:.58rem;}
+  .font-lg .msg-content{font-size:1.04rem;} .font-lg .msg-line{font-size:.94rem;} .font-lg .part-text{font-size:.8rem;} .font-lg .tool-call{font-size:.78rem;} .font-lg .tool-call-args code{font-size:.75rem;} .font-lg .part-fn-body{font-size:.78rem;} .font-lg .json-mini-line{font-size:.76rem;} .font-lg .part-reasoning{font-size:.83rem;} .font-lg .json-tree{font-size:.78rem;}
+  .settings-btn-wrapper{position:relative;display:inline-flex;} #dropzone{border:2px dashed var(--border); margin:.25rem 1rem 0; padding:.75rem; text-align:center; font-size:.8rem; color:var(--muted); border-radius:6px;} #dropzone.dragover{border-color:var(--accent); color:var(--accent); background:#1b283b;} .footer{padding:.5rem .75rem; font-size:.65rem; text-align:right; color:var(--muted); border-top:1px solid var(--border);} .edited-flag{color:var(--accent);} @media (max-width:1100px){.columns{flex-direction:column;flex:none;}.columns .col{flex:none;overflow:visible;}.columns #inputMessages,.columns #outputMessages{flex:none;overflow-y:visible;}}
   /* Equal columns & wrapping adjustments */
   .columns{align-items:stretch;}
   .col{min-width:0;}
@@ -281,18 +333,63 @@
       <div id="fileHint" class="file-hint">拖拽 JSONL 文件到此处 或 点击按钮选择</div>
     </div>
     <select id="trajectorySelect" title="已加载的文件" disabled></select>
-    <div class="nav-group">
-      <button id="firstStep" disabled>&lt;&lt;</button><button id="prevStep" disabled>&lt;</button>
-      <span id="stepLabel">Step</span><input id="jumpStep" class="jump-input" type="number" min="1" value="1" disabled />
-      <span id="totalSteps">/ 0</span><button id="nextStep" disabled>&gt;</button><button id="lastStep" disabled>&gt;&gt;</button>
+    <div class="nav-stepper">
+      <button id="firstStep" class="stepper-btn" disabled aria-label="第一步"><span class="stepper-icon chevrons-left"></span></button>
+      <button id="prevStep" class="stepper-btn" disabled aria-label="上一步"><span class="stepper-icon chevron-left"></span></button>
+      <div class="stepper-display" id="stepperDisplay">
+        <span id="stepLabel">步骤</span>
+        <span id="jumpStep" class="stepper-current">1</span>
+        <span class="stepper-sep">/</span>
+        <span id="totalSteps">0</span>
+      </div>
+      <button id="nextStep" class="stepper-btn" disabled aria-label="下一步"><span class="stepper-icon chevron-right"></span></button>
+      <button id="lastStep" class="stepper-btn" disabled aria-label="最后一步"><span class="stepper-icon chevrons-right"></span></button>
     </div>
     <div class="toolbar">
-      <button id="exportCurrent" disabled>导出当前步骤</button>
-      <button id="exportTrajectory" disabled>导出轨迹</button>
-      <select id="langSelect" title="Language">
-        <option value="zh">中文</option>
-        <option value="en">English</option>
-      </select>
+      <div class="dropdown-wrapper" id="exportDropdown">
+        <button id="exportBtn" class="dropdown-toggle primary" disabled><span class="dropdown-label">导出</span><span class="dropdown-arrow">▾</span></button>
+        <div class="dropdown-menu" id="exportMenu">
+          <button id="exportCurrent">导出当前步骤</button>
+          <button id="exportTrajectory">导出轨迹</button>
+        </div>
+      </div>
+      <div class="settings-btn-wrapper">
+        <button id="settingsBtn" class="settings-btn" aria-label="设置"><span class="settings-icon"></span></button>
+        <div class="settings-popover" id="settingsPopover">
+          <div class="popover-section">
+            <div class="popover-section-title" id="popoverLayoutTitle">布局</div>
+            <button class="popover-option active" data-layout="dual" id="optLayoutDual">
+              <span class="popover-check">✓</span><span>双列布局</span>
+            </button>
+            <button class="popover-option" data-layout="single" id="optLayoutSingle">
+              <span class="popover-check">✓</span><span>单列布局</span>
+            </button>
+          </div>
+          <div class="popover-divider"></div>
+          <div class="popover-section">
+            <div class="popover-section-title" id="popoverLangTitle">语言</div>
+            <button class="popover-option active" data-lang="zh" id="optLangZh">
+              <span class="popover-check">✓</span><span>中文</span>
+            </button>
+            <button class="popover-option" data-lang="en" id="optLangEn">
+              <span class="popover-check">✓</span><span>English</span>
+            </button>
+          </div>
+          <div class="popover-divider"></div>
+          <div class="popover-section">
+            <div class="popover-section-title" id="popoverFontSizeTitle">字体大小</div>
+            <button class="popover-option" data-font="sm" id="optFontSm">
+              <span class="popover-check">✓</span><span>小</span>
+            </button>
+            <button class="popover-option active" data-font="md" id="optFontMd">
+              <span class="popover-check">✓</span><span>中</span>
+            </button>
+            <button class="popover-option" data-font="lg" id="optFontLg">
+              <span class="popover-check">✓</span><span>大</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="grow"></div>
     <div class="header-right">
@@ -366,13 +463,16 @@
     window.createJSONEditor = createJSONEditor;
   </script>
   <script>
-  const state={files:new Map(),currentFile:null,currentIndex:0,wrapStates:{},lang:(navigator.language||'').toLowerCase().startsWith('zh')?'zh':'en',inputMode:'rich',outputMode:'rich',inputEditor:null,outputEditor:null};
+  const state={files:new Map(),currentFile:null,currentIndex:0,wrapStates:{},lang:(navigator.language||'').toLowerCase().startsWith('zh')?'zh':'en',inputMode:'rich',outputMode:'rich',inputEditor:null,outputEditor:null,layoutMode:'dual',fontSize:'md'};
     const el=id=>document.getElementById(id);
   const fileInput=el('fileInput'),trajectorySelect=el('trajectorySelect');
     const firstStep=el('firstStep'),prevStep=el('prevStep'),nextStep=el('nextStep'),lastStep=el('lastStep');
     const jumpStep=el('jumpStep'),totalSteps=el('totalSteps'),statusEl=el('status');
   const inputMessagesEl=el('inputMessages'),outputMessagesEl=el('outputMessages');
   const exportCurrent=el('exportCurrent'),exportTrajectory=el('exportTrajectory');
+  const exportBtn=el('exportBtn'),exportDropdown=el('exportDropdown'),exportMenu=el('exportMenu');
+  const settingsBtn=el('settingsBtn'),settingsPopover=el('settingsPopover');
+  const columnsEl=document.querySelector('.columns');
   const stepDetailsBtn=el('stepDetailsBtn');
   const stepDetailsModal=el('stepDetailsModal');
   const stepDetailsEditor=el('stepDetailsEditor');
@@ -381,7 +481,6 @@
   const fileArea=el('fileArea');
   const selectFilesBtn=el('selectFilesBtn');
   const fileHint=el('fileHint');
-    const langSelect=el('langSelect');
     const titleText=el('titleText');
     const stepLabel=el('stepLabel');
     const inputPanelTitle=el('inputPanelTitle');
@@ -398,8 +497,8 @@
     function exitCompact(){fileArea.classList.remove('compact'); if(fileHint) fileHint.style.display='';}
 
     const I18N={
-  zh:{title:'轨迹浏览器',load:'载入',selectFolder:'选择文件夹',selectFiles:'选择文件',hint:'拖拽 JSONL 文件到此处 或 点击按钮选择',skipInfo:'已读取: {loaded} 个，跳过非 JSONL: {skipped} 个',notLoaded:'未加载文件',dragDrop:'拖拽 JSONL 文件到此处 或 使用上方文件选择',step:'步骤',stepDetails:'步骤详情',stepDetailsModalTitle:'步骤详情 - 原始 JSON',highlight:'高亮答案',unhighlight:'取消高亮',exportCurrent:'导出当前步骤',exportTrajectory:'导出轨迹',inputMessages:'输入消息',outputMessages:'输出消息',mode:{rich:'美化视图',edit:'编辑'},copy:'复制',copied:'已复制',fold:'折叠',expandStructure:'展开结构',expandAll:'展开',collapseAll:'全部折叠',searchPlaceholder:'搜索...',wrapOn:'自适应换行',wrapOff:'横向滚动',edit:'编辑',edited:'已编辑',empty:'(空)',tools:'Tools',inferenceArgs:'Inference Args',meta:'Meta',originalStep:'原始 Step JSON',save:'保存',format:'格式化',fullscreen:'全屏',restore:'还原',reset:'恢复原始',back:'返回',diff:'对比',hideDiff:'隐藏对比',validJson:'有效 JSON',invalidRootArray:'根必须是数组',editingArray:'编辑 JSON 数组: message 列表',escHint:'ESC 取消 / Ctrl+S 保存',parseFailed:'解析失败: ',loadingParsing:'解析文件...',zoom:'放大',previewTitle:'图片预览',close:'关闭'},
-  en:{title:'Trajectory Browser',load:'Load',selectFolder:'Select Folder',selectFiles:'Select Files',hint:'Drag JSONL files here or click buttons',skipInfo:'Loaded: {loaded}, skipped non-JSONL: {skipped}',notLoaded:'No file loaded',dragDrop:'Drag JSONL files here or use selectors above',step:'Step',stepDetails:'Step Details',stepDetailsModalTitle:'Step Details - Raw JSON',highlight:'Highlight Answer',unhighlight:'Unhighlight',exportCurrent:'Export Current Step',exportTrajectory:'Export Trajectory',inputMessages:'Input Messages',outputMessages:'Output Messages',mode:{rich:'Rich View',edit:'Edit'},copy:'Copy',copied:'Copied',fold:'Fold',expandStructure:'Expand Structure',expandAll:'Expand',collapseAll:'Collapse All',searchPlaceholder:'Search...',wrapOn:'Wrap',wrapOff:'Horizontal',edit:'Edit',edited:'Edited',empty:'(empty)',tools:'Tools',inferenceArgs:'Inference Args',meta:'Meta',originalStep:'Raw Step JSON',save:'Save',format:'Format',fullscreen:'Fullscreen',restore:'Restore',reset:'Reset',back:'Back',diff:'Diff',hideDiff:'Hide Diff',validJson:'Valid JSON',invalidRootArray:'Root must be an array',editingArray:'Edit JSON array: messages list',escHint:'ESC Cancel / Ctrl+S Save',parseFailed:'Parse failed: ',loadingParsing:'Parsing files...',zoom:'Zoom',previewTitle:'Image Preview',close:'Close'}
+  zh:{title:'轨迹浏览器',load:'载入',selectFolder:'选择文件夹',selectFiles:'选择文件',hint:'拖拽 JSONL 文件到此处 或 点击按钮选择',skipInfo:'已读取: {loaded} 个，跳过非 JSONL: {skipped} 个',notLoaded:'未加载文件',dragDrop:'拖拽 JSONL 文件到此处 或 使用上方文件选择',step:'步骤',stepDetails:'步骤详情',stepDetailsModalTitle:'步骤详情 - 原始 JSON',highlight:'高亮答案',unhighlight:'取消高亮',export:'导出',exportCurrent:'导出当前步骤',exportTrajectory:'导出轨迹',settings:'设置',layout:'布局',layoutDual:'双列布局',layoutSingle:'单列布局',fontSize:'字体大小',fontSizeSm:'小',fontSizeMd:'中',fontSizeLg:'大',language:'语言',inputMessages:'输入消息',outputMessages:'输出消息',mode:{rich:'美化视图',edit:'编辑'},copy:'复制',copied:'已复制',fold:'折叠',expandStructure:'展开结构',expandAll:'展开',collapseAll:'全部折叠',searchPlaceholder:'搜索...',wrapOn:'自适应换行',wrapOff:'横向滚动',edit:'编辑',edited:'已编辑',empty:'(空)',tools:'Tools',inferenceArgs:'Inference Args',meta:'Meta',originalStep:'原始 Step JSON',save:'保存',format:'格式化',fullscreen:'全屏',restore:'还原',reset:'恢复原始',back:'返回',diff:'对比',hideDiff:'隐藏对比',validJson:'有效 JSON',invalidRootArray:'根必须是数组',editingArray:'编辑 JSON 数组: message 列表',escHint:'ESC 取消 / Ctrl+S 保存',parseFailed:'解析失败: ',loadingParsing:'解析文件...',zoom:'放大',previewTitle:'图片预览',close:'关闭'},
+  en:{title:'Trajectory Browser',load:'Load',selectFolder:'Select Folder',selectFiles:'Select Files',hint:'Drag JSONL files here or click buttons',skipInfo:'Loaded: {loaded}, skipped non-JSONL: {skipped}',notLoaded:'No file loaded',dragDrop:'Drag JSONL files here or use selectors above',step:'Step',stepDetails:'Step Details',stepDetailsModalTitle:'Step Details - Raw JSON',highlight:'Highlight Answer',unhighlight:'Unhighlight',export:'Export',exportCurrent:'Export Current Step',exportTrajectory:'Export Trajectory',settings:'Settings',layout:'Layout',layoutDual:'Dual Column',layoutSingle:'Single Column',fontSize:'Font Size',fontSizeSm:'Small',fontSizeMd:'Medium',fontSizeLg:'Large',language:'Language',inputMessages:'Input Messages',outputMessages:'Output Messages',mode:{rich:'Rich View',edit:'Edit'},copy:'Copy',copied:'Copied',fold:'Fold',expandStructure:'Expand Structure',expandAll:'Expand',collapseAll:'Collapse All',searchPlaceholder:'Search...',wrapOn:'Wrap',wrapOff:'Horizontal',edit:'Edit',edited:'Edited',empty:'(empty)',tools:'Tools',inferenceArgs:'Inference Args',meta:'Meta',originalStep:'Raw Step JSON',save:'Save',format:'Format',fullscreen:'Fullscreen',restore:'Restore',reset:'Reset',back:'Back',diff:'Diff',hideDiff:'Hide Diff',validJson:'Valid JSON',invalidRootArray:'Root must be an array',editingArray:'Edit JSON array: messages list',escHint:'ESC Cancel / Ctrl+S Save',parseFailed:'Parse failed: ',loadingParsing:'Parsing files...',zoom:'Zoom',previewTitle:'Image Preview',close:'Close'}
   };
   // i18n additions for image preview (non-breaking augment)
   if(!I18N.zh.zoom){ try{ Object.assign(I18N.zh, { zoom:'放大', previewTitle:'图片预览', close:'关闭' }); }catch(e){} }
@@ -409,8 +508,18 @@
     // update mode buttons text
     document.querySelectorAll('.mode-buttons button').forEach(btn=>{const key=btn.getAttribute('data-i18n');if(key)btn.textContent=t(key);});
   exportCurrent.textContent=t('exportCurrent');exportTrajectory.textContent=t('exportTrajectory');
+  const exportLabel=exportBtn.querySelector('.dropdown-label');if(exportLabel)exportLabel.textContent=t('export');
+  // Update popover texts
+  const popoverLayoutTitle=el('popoverLayoutTitle');if(popoverLayoutTitle)popoverLayoutTitle.textContent=t('layout');
+  const popoverLangTitle=el('popoverLangTitle');if(popoverLangTitle)popoverLangTitle.textContent=t('language');
+  const optLayoutDual=el('optLayoutDual');if(optLayoutDual)optLayoutDual.querySelector('span:last-child').textContent=t('layoutDual');
+  const optLayoutSingle=el('optLayoutSingle');if(optLayoutSingle)optLayoutSingle.querySelector('span:last-child').textContent=t('layoutSingle');
+  const popoverFontSizeTitle=el('popoverFontSizeTitle');if(popoverFontSizeTitle)popoverFontSizeTitle.textContent=t('fontSize');
+  const optFontSm=el('optFontSm');if(optFontSm)optFontSm.querySelector('span:last-child').textContent=t('fontSizeSm');
+  const optFontMd=el('optFontMd');if(optFontMd)optFontMd.querySelector('span:last-child').textContent=t('fontSizeMd');
+  const optFontLg=el('optFontLg');if(optFontLg)optFontLg.querySelector('span:last-child').textContent=t('fontSizeLg');
   const ttl=document.querySelector('#imgPreviewOverlay .mac-title'); if(ttl) ttl.textContent=t('previewTitle');}
-    langSelect.value=state.lang;langSelect.addEventListener('change',()=>{state.lang=langSelect.value;applyLangStatic();render();});
+  // Language & layout from popover are handled in initSettingsPopover
     function setStatus(msg,ok=true){statusEl.textContent=msg;statusEl.style.color=ok?'var(--muted)':'var(--danger)';}
   function formatBytes(bytes){
     const n=Number(bytes)||0;
@@ -694,16 +803,15 @@
   }
   function refreshFileSelect(){trajectorySelect.innerHTML='';for(const name of state.files.keys()){const opt=document.createElement('option');opt.value=name;opt.textContent=name+' ('+state.files.get(name).steps.length+')';trajectorySelect.appendChild(opt);}trajectorySelect.disabled=!state.files.size;if(state.files.size){if(!state.currentFile||!state.files.has(state.currentFile))state.currentFile=trajectorySelect.options[0].value;trajectorySelect.value=state.currentFile;state.currentIndex=0;enterCompact();render();}else {clearDisplay();exitCompact();}}
     trajectorySelect.addEventListener('change',()=>{state.currentFile=trajectorySelect.value;state.currentIndex=0;render();});
-  function clearDisplay(){inputMessagesEl.innerHTML='';outputMessagesEl.innerHTML='';totalSteps.textContent='/ 0';[firstStep,prevStep,nextStep,lastStep,jumpStep,exportCurrent,exportTrajectory,stepDetailsBtn].forEach(b=>b.disabled=true);disableModeButtons(true);}
+  function clearDisplay(){inputMessagesEl.innerHTML='';outputMessagesEl.innerHTML='';totalSteps.textContent='0';jumpStep.textContent='1';[firstStep,prevStep,nextStep,lastStep,exportBtn,stepDetailsBtn].forEach(b=>b.disabled=true);disableModeButtons(true);}
   function refreshStreamingUI(name){
     const entry=state.files.get(name);
     if(!entry)return;
     const total=entry.steps.length;
     for(const opt of trajectorySelect.options){if(opt.value===name){opt.textContent=name+' ('+total+')';break;}}
-    totalSteps.textContent='/ '+total;
-    jumpStep.disabled=false;
-    jumpStep.value=Math.min(state.currentIndex+1,total||1);
-    [firstStep,prevStep,nextStep,lastStep,exportCurrent,exportTrajectory,stepDetailsBtn].forEach(b=>b.disabled=false);
+    totalSteps.textContent=total;
+    jumpStep.textContent=Math.min(state.currentIndex+1,total||1);
+    [firstStep,prevStep,nextStep,lastStep,exportBtn,stepDetailsBtn].forEach(b=>b.disabled=false);
     disableModeButtons(false);
     firstStep.disabled=prevStep.disabled=state.currentIndex===0;
     lastStep.disabled=nextStep.disabled=state.currentIndex>=total-1;
@@ -712,7 +820,7 @@
     }
   }
   function disableModeButtons(disabled){document.querySelectorAll('.mode-buttons button').forEach(b=>b.disabled=disabled);}
-    function render(){if(!state.currentFile){clearDisplay();applyLangStatic();return;}const {steps}=state.files.get(state.currentFile);const total=steps.length;if(!total){clearDisplay();applyLangStatic();return;}state.currentIndex=Math.min(Math.max(0,state.currentIndex),total-1);const stepObj=steps[state.currentIndex];totalSteps.textContent='/ '+total;jumpStep.disabled=false;jumpStep.value=state.currentIndex+1;[firstStep,prevStep,nextStep,lastStep,exportCurrent,exportTrajectory,stepDetailsBtn].forEach(b=>b.disabled=false);disableModeButtons(false);firstStep.disabled=prevStep.disabled=state.currentIndex===0;lastStep.disabled=nextStep.disabled=state.currentIndex===total-1;renderMessages(stepObj);updateModeButtonsUI();}
+    function render(){if(!state.currentFile){clearDisplay();applyLangStatic();return;}const {steps}=state.files.get(state.currentFile);const total=steps.length;if(!total){clearDisplay();applyLangStatic();return;}state.currentIndex=Math.min(Math.max(0,state.currentIndex),total-1);const stepObj=steps[state.currentIndex];totalSteps.textContent=total;jumpStep.textContent=state.currentIndex+1;[firstStep,prevStep,nextStep,lastStep,exportBtn,stepDetailsBtn].forEach(b=>b.disabled=false);disableModeButtons(false);firstStep.disabled=prevStep.disabled=state.currentIndex===0;lastStep.disabled=nextStep.disabled=state.currentIndex===total-1;renderMessages(stepObj);updateModeButtonsUI();}
   // Initialize page - disable mode buttons initially
   disableModeButtons(true);
   applyLangStatic();
@@ -747,6 +855,81 @@
   function updateModeButtonsUI(){document.querySelectorAll('#inputModeBtns button').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.inputMode));document.querySelectorAll('#outputModeBtns button').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.outputMode));}
   function initModeButtons(){['input','output'].forEach(kind=>{const root=el(kind==='input'?'inputModeBtns':'outputModeBtns');root.querySelectorAll('button').forEach(btn=>{btn.addEventListener('click',()=>{const mode=btn.dataset.mode; if(kind==='input'){state.inputMode=mode;} else {state.outputMode=mode;} updateModeButtonsUI(); render();});});});}
   initModeButtons();
+
+  // --- Export dropdown toggle ---
+  exportBtn.addEventListener('click',(e)=>{
+    e.stopPropagation();
+    if(exportBtn.disabled)return;
+    closeSettingsPopover();
+    exportDropdown.classList.toggle('open');
+  });
+  // Click dropdown menu items -> close dropdown
+  exportMenu.addEventListener('click',(e)=>{
+    exportDropdown.classList.remove('open');
+  });
+
+  // --- Settings popover ---
+  function closeSettingsPopover(){settingsPopover.classList.remove('show');}
+  function openSettingsPopover(){closeExportDropdown();settingsPopover.classList.add('show');}
+  function closeExportDropdown(){exportDropdown.classList.remove('open');}
+  function toggleSettingsPopover(){
+    if(settingsPopover.classList.contains('show')){closeSettingsPopover();}
+    else{closeExportDropdown();openSettingsPopover();}
+  }
+  settingsBtn.addEventListener('click',(e)=>{e.stopPropagation();toggleSettingsPopover();});
+
+  // --- Settings popover: layout toggle ---
+  function updateLayoutUI(){
+    const dual=el('optLayoutDual'),single=el('optLayoutSingle');
+    if(dual)dual.classList.toggle('active',state.layoutMode==='dual');
+    if(single)single.classList.toggle('active',state.layoutMode==='single');
+    if(columnsEl)columnsEl.classList.toggle('single-col',state.layoutMode==='single');
+  }
+  // --- Settings popover: font size ---
+  function updateFontSizeUI(){
+    const sizes=['sm','md','lg'];
+    if(columnsEl){sizes.forEach(s=>columnsEl.classList.toggle('font-'+s,s===state.fontSize));}
+    sizes.forEach(s=>{const opt=el('optFont'+s.charAt(0).toUpperCase()+s.slice(1));if(opt)opt.classList.toggle('active',s===state.fontSize);});
+  }
+  settingsPopover.addEventListener('click',(e)=>{
+    const opt=e.target.closest('.popover-option');
+    if(!opt)return;
+    // Layout
+    const layout=opt.dataset.layout;
+    if(layout&&layout!==state.layoutMode){
+      state.layoutMode=layout;
+      updateLayoutUI();
+      closeSettingsPopover();
+    }
+    // Language
+    const lang=opt.dataset.lang;
+    if(lang&&lang!==state.lang){
+      state.lang=lang;
+      el('optLangZh').classList.toggle('active',lang==='zh');
+      el('optLangEn').classList.toggle('active',lang==='en');
+      applyLangStatic();render();
+      closeSettingsPopover();
+    }
+    // Font size
+    const font=opt.dataset.font;
+    if(font&&font!==state.fontSize){
+      state.fontSize=font;
+      updateFontSizeUI();
+      closeSettingsPopover();
+    }
+  });
+
+  // --- Update popover active states on init ---
+  updateLayoutUI();
+  updateFontSizeUI();
+  el('optLangZh').classList.toggle('active',state.lang==='zh');
+  el('optLangEn').classList.toggle('active',state.lang==='en');
+
+  // --- Close popups on outside click ---
+  document.addEventListener('click',(e)=>{
+    if(!exportDropdown.contains(e.target))closeExportDropdown();
+    if(!settingsPopover.contains(e.target)&&e.target!==settingsBtn&&!settingsBtn.contains(e.target))closeSettingsPopover();
+  });
 
   // --- Build edit area using svelte-jsoneditor ---
   function buildEditArea(stepObj,side){
@@ -1161,7 +1344,47 @@
   }
   function escapeHtml(str){return String(str).replace(/[&<>\"]/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s]));}
     function syntaxHighlight(json){if(!json)return'';return json.replace(/(&quot;.*?&quot;:?|".*?":?|\b(true|false|null)\b|-?\d+(?:\.\d+)?)/g,m=>{let c='json-number';if(/^"/.test(m))c=/:$/.test(m)?'json-key':'json-string';else if(/true|false/.test(m))c='json-boolean';else if(/null/.test(m))c='json-null';return'<code class='+c+'>'+m+'</code>';});}
-    firstStep.onclick=()=>{state.currentIndex=0;render();};prevStep.onclick=()=>{state.currentIndex--;render();};nextStep.onclick=()=>{state.currentIndex++;render();};lastStep.onclick=()=>{const {steps}=state.files.get(state.currentFile);state.currentIndex=steps.length-1;render();};jumpStep.addEventListener('change',()=>{const v=parseInt(jumpStep.value,10)-1;if(!isNaN(v)){state.currentIndex=v;render();}});
+    firstStep.onclick=()=>{state.currentIndex=0;render();};prevStep.onclick=()=>{state.currentIndex--;render();};nextStep.onclick=()=>{state.currentIndex++;render();};lastStep.onclick=()=>{const {steps}=state.files.get(state.currentFile);state.currentIndex=steps.length-1;render();};
+  // Click-to-edit stepper: click the display area to jump to a step
+  (function initStepperEdit(){
+    const display=el('stepperDisplay');
+    if(!display)return;
+    let editing=false;
+    display.addEventListener('click',()=>{
+      if(editing||!state.currentFile)return;
+      const {steps}=state.files.get(state.currentFile);
+      if(!steps||!steps.length)return;
+      editing=true;
+      const cur=jumpStep;
+      const origText=cur.textContent;
+      cur.classList.add('editing');
+      const input=document.createElement('input');
+      input.type='number';input.min='1';input.max=steps.length;
+      input.value=state.currentIndex+1;
+      input.className='stepper-edit-input';
+      cur.textContent='';
+      cur.appendChild(input);
+      input.focus();input.select();
+      const commit=()=>{
+        const v=parseInt(input.value,10);
+        if(!isNaN(v)&&v>=1&&v<=steps.length){state.currentIndex=v-1;render();}
+        cleanup();
+      };
+      const cancel=()=>{cur.textContent=origText;cleanup();};
+      const cleanup=()=>{
+        editing=false;
+        cur.classList.remove('editing');
+        if(input.parentNode)input.remove();
+        display.removeEventListener('keydown',onKey);
+      };
+      const onKey=(e)=>{
+        if(e.key==='Enter'){e.preventDefault();commit();}
+        else if(e.key==='Escape'){e.preventDefault();cancel();}
+      };
+      input.addEventListener('blur',commit);
+      display.addEventListener('keydown',onKey);
+    });
+  })();
   // select-based handlers removed; button handlers handled in initModeButtons()
     exportCurrent.onclick=()=>{if(!state.currentFile)return;const {steps}=state.files.get(state.currentFile);const stepObj=steps[state.currentIndex];const exp=buildExportStep(stepObj);const blob=new Blob([JSON.stringify(exp,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${state.currentFile.replace(/\.[^.]+$/, '')}_step_${state.currentIndex+1}.json`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(a.href);};
     exportTrajectory.onclick=()=>{if(!state.currentFile)return;const {steps}=state.files.get(state.currentFile);const lines=steps.map(s=>JSON.stringify(buildExportStep(s))).join('\n');const blob=new Blob([lines+'\n'],{type:'application/jsonl'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=state.currentFile.replace(/\.[^.]+$/, '')+'_edited.jsonl';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(a.href);};
