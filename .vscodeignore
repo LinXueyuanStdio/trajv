@@ -7,3 +7,8 @@
 **/node_modules/**
 src/**
 tsconfig.json
+assets/sample.rollout.jsonl
+.env.example
+.env
+scripts
+build.sh
