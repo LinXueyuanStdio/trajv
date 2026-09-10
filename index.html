@@ -575,8 +575,8 @@
     let loadStatusHideTimer=null;
 
     // --- Compact header helpers ---
-    function enterCompact(){fileArea.classList.add('compact'); if(fileHint) fileHint.style.display='none';}
-    function exitCompact(){fileArea.classList.remove('compact'); if(fileHint) fileHint.style.display='';}
+    function enterCompact(){fileArea.classList.add('compact');if(fileHint)fileHint.style.display='none';if(titleText)titleText.hidden=true;}
+    function exitCompact(){fileArea.classList.remove('compact');if(fileHint)fileHint.style.display='';if(titleText)titleText.hidden=false;}
 
     const I18N={
   zh:{title:'轨迹浏览器',load:'载入',selectFolder:'选择文件夹',selectFiles:'选择文件',hint:'拖拽 JSONL 文件到此处 或 点击按钮选择',skipInfo:'已读取: {loaded} 个，跳过非 JSONL: {skipped} 个',notLoaded:'未加载文件',dragDrop:'拖拽 JSONL 文件到此处 或 使用上方文件选择',step:'步骤',stepDetails:'步骤详情',stepDetailsModalTitle:'步骤详情 - 原始 JSON',leftStepTitle:'步骤 {index}',rightStepTitle:'对比步骤 {index}',autoCollapseSame:'自动折叠相同消息',highlight:'高亮答案',unhighlight:'取消高亮',export:'导出',exportCurrent:'导出当前步骤',exportTrajectory:'导出轨迹',settings:'设置',layout:'布局',layoutDual:'双列布局',layoutSingle:'单列布局',fontSize:'字体大小',fontSizeSm:'小',fontSizeMd:'中',fontSizeLg:'大',language:'语言',inputMessages:'输入消息',outputMessages:'输出消息',mode:{rich:'美化视图',edit:'编辑'},copy:'复制',copied:'已复制',fold:'折叠',expandStructure:'展开结构',expandAll:'展开',collapseAll:'全部折叠',searchPlaceholder:'搜索...',wrapOn:'自适应换行',wrapOff:'横向滚动',edit:'编辑',edited:'已编辑',empty:'(空)',tools:'Tools',inferenceArgs:'Inference Args',meta:'Meta',originalStep:'原始 Step JSON',save:'保存',format:'格式化',fullscreen:'全屏',restore:'还原',reset:'恢复原始',back:'返回',diff:'对比',hideDiff:'隐藏对比',compareStep:'对比步骤',fieldChanges:'{count} 项字段差异',added:'新增',removed:'删除',changed:'修改',unchanged:'无差异',emptyMessages:'暂无消息',validJson:'有效 JSON',invalidRootArray:'根必须是数组',editingArray:'编辑 JSON 数组: message 列表',escHint:'ESC 取消 / Ctrl+S 保存',parseFailed:'解析失败: ',loadingParsing:'解析文件...',zoom:'放大',previewTitle:'图片预览',close:'关闭'},
