@@ -34,7 +34,7 @@
   .file-area.compact{flex-direction:row;align-items:center;gap:.6rem;padding:.35rem .55rem;min-width:auto;max-width:none;border-style:solid;}
   .file-area.compact .file-hint{display:none !important;}
   body.vscode-folder-mode #fileArea{display:none!important;}
-  body.vscode-folder-mode #trajectorySelect{display:block!important;min-width:220px;max-width:min(420px,32vw);}
+  body.vscode-folder-mode #trajectorySelect{display:block!important;width:clamp(220px,32vw,420px);min-width:0;}
   .file-area.dragover{border-color:var(--accent);background:#1b283b;}
   .file-actions{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;}
   .file-hint{font-size:.65rem;color:var(--muted);letter-spacing:.3px;}
@@ -51,6 +51,13 @@
   select:hover{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset,0 1px 0 #0004;}
   select:focus{outline:2px solid var(--accent); outline-offset:2px;}
   select:disabled{opacity:.45; cursor:not-allowed;}
+  /* Quiet macOS-style trajectory picker. Native options preserve keyboard and accessibility behavior. */
+  #trajectorySelect{height:32px;min-width:190px;max-width:min(420px,40vw);padding:0 34px 0 34px;border:1px solid #ffffff24;border-radius:8px;color:#f2f3f5;font-size:.76rem;font-weight:500;letter-spacing:0;text-overflow:ellipsis;white-space:nowrap;background-color:#292c31;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23aeb4bd' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/%3E%3Cpath d='M14 2v6h6'/%3E%3C/svg%3E"),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23c7ccd3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m8 9 4-4 4 4'/%3E%3Cpath d='m16 15-4 4-4-4'/%3E%3C/svg%3E"),linear-gradient(180deg,#3a3d42 0%,#2a2d32 52%,#25282c 100%);background-repeat:no-repeat,no-repeat,no-repeat;background-position:10px center,calc(100% - 10px) center,center;background-size:15px 15px,13px 13px,100% 100%;box-shadow:0 1px 0 #ffffff16 inset,0 1px 2px #0008,0 4px 12px #0003;transition:border-color .2s ease,box-shadow .24s ease,background-color .2s ease,filter .2s ease;}
+  #trajectorySelect:hover:not(:disabled){border-color:#ffffff3d;filter:brightness(1.08);box-shadow:0 1px 0 #ffffff20 inset,0 1px 2px #0008,0 5px 15px #0004;}
+  #trajectorySelect:focus,#trajectorySelect:focus-visible{outline:none;border-color:#6ba2ff;box-shadow:0 0 0 3px #3d82f638,0 1px 0 #ffffff20 inset,0 5px 16px #0005;}
+  #trajectorySelect:active:not(:disabled){filter:brightness(.96);box-shadow:0 1px 3px #0008 inset,0 1px 2px #0005;}
+  #trajectorySelect:disabled{color:#858b94;border-color:#ffffff12;background-color:#25272b;box-shadow:0 1px 0 #ffffff0d inset;filter:saturate(.7);}
+  #trajectorySelect option{background:#292c31;color:#f2f3f5;font-size:.78rem;}
   /* Compact mode selects */
   .mode-select{padding:.28rem 1.4rem .28rem .45rem; font-size:.7rem; background-size:11px 11px;}
   /* Flat mode buttons */
@@ -896,7 +903,7 @@
     const entry=state.files.get(name);
     if(!entry)return;
     const total=entry.steps.length;
-    for(const opt of trajectorySelect.options){if(opt.value===name){opt.textContent=name+' ('+total+')';break;}}
+    if(!state.folderMode||entry.loadState==='loaded'){for(const opt of trajectorySelect.options){if(opt.value===name){opt.textContent=name+' ('+total+')';break;}}}
     if(state.currentFile!==name)return;
     totalSteps.textContent=total;
     jumpStep.textContent=Math.min(state.currentIndex+1,total||1);
@@ -904,7 +911,7 @@
     disableModeButtons(false);
     firstStep.disabled=prevStep.disabled=state.currentIndex===0;
     lastStep.disabled=nextStep.disabled=state.currentIndex>=total-1;
-    if(state.currentFile===name&&state.currentIndex<total)render();
+    if(state.currentFile===name&&state.currentIndex<total&&(!state.folderMode||!entry.streamRendered)){entry.streamRendered=true;render();}
   }
   function disableModeButtons(disabled){document.querySelectorAll('.mode-buttons button').forEach(b=>b.disabled=disabled);}
     function render(){if(!state.currentFile){clearDisplay();applyLangStatic();return;}const {steps}=state.files.get(state.currentFile);const total=steps.length;if(!total){clearDisplay();applyLangStatic();return;}state.currentIndex=Math.min(Math.max(0,state.currentIndex),total-1);state.compareIndex=Math.min(Math.max(0,state.compareIndex),total-1);const stepObj=steps[state.currentIndex];totalSteps.textContent=total;jumpStep.textContent=state.currentIndex+1;[firstStep,prevStep,nextStep,lastStep,exportBtn,stepDetailsBtn].forEach(b=>b.disabled=false);compareStepDetailsBtn.disabled=!state.compareMode;disableModeButtons(false);firstStep.disabled=prevStep.disabled=state.currentIndex===0;lastStep.disabled=nextStep.disabled=state.currentIndex===total-1;updateCompareControls(total);updateLayoutUI();if(state.compareMode)renderCompareMessages(stepObj,steps[state.compareIndex]);else renderMessages(stepObj);updateModeButtonsUI();}
@@ -1713,7 +1720,7 @@
     }
     function updateFolderOption(name){
       const entry=state.files.get(name);if(!entry)return;
-      for(const opt of trajectorySelect.options){if(opt.value!==name)continue;if(entry.loadState==='loading')opt.textContent=`${name} · ${t('loadingParsing')} (${entry.steps.length})`;else if(entry.loadState==='loaded')opt.textContent=`${name} (${entry.steps.length})`;else if(entry.loadState==='error')opt.textContent=`${name} · ${t('loadFailed')}`;else opt.textContent=name;break;}
+      for(const opt of trajectorySelect.options){if(opt.value!==name)continue;if(entry.loadState==='loading')opt.textContent=`${name} · ${t('loadingParsing')}`;else if(entry.loadState==='loaded')opt.textContent=`${name} (${entry.steps.length})`;else if(entry.loadState==='error')opt.textContent=`${name} · ${t('loadFailed')}`;else opt.textContent=name;break;}
     }
     function initializeFolderManifest(msg){
       abortActiveLoad();showFolderOpenControls();state.files.clear();state.currentFile=null;state.currentIndex=0;state.compareMode=false;trajectorySelect.innerHTML='';
@@ -1725,20 +1732,20 @@
     }
     async function loadFolderTrajectory(name){
       const entry=state.files.get(name);if(!entry||entry.loadState==='loaded'){if(entry)render();return;}
-      const task=startLoadTask();entry.loadTaskId=task.id;entry.loadState='loading';entry.steps=[];updateFolderOption(name);state.currentFile=name;state.currentIndex=0;state.compareMode=false;clearDisplay();
+      const task=startLoadTask();entry.loadTaskId=task.id;entry.loadState='loading';entry.streamRendered=false;entry.steps=[];updateFolderOption(name);state.currentFile=name;state.currentIndex=0;state.compareMode=false;clearDisplay();
       const totalBytes=Number(entry.size)||0;
       try{
         showLoadProgress(`读取 ${name}`,0,totalBytes,0);await waitForInitialPaint();throwIfAborted(task.controller.signal);
         const response=await fetch(entry.webviewUri);throwIfAborted(task.controller.signal);if(!response.ok)throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         const effectiveTotal=totalBytes||Number(response.headers.get('content-length'))||0;
-        const streamOpts={signal:task.controller.signal,totalBytes:effectiveTotal,onStep:(accSteps)=>{if(!isCurrentLoadTask(task))return;entry.steps=accSteps;refreshStreamingUI(name);updateFolderOption(name);}};
+        const streamOpts={signal:task.controller.signal,totalBytes:effectiveTotal,onStep:(accSteps)=>{if(!isCurrentLoadTask(task))return;entry.steps=accSteps;refreshStreamingUI(name);}};
         let parsed;
         if(response.body)parsed=await parseJSONLStream(response.body,p=>updateLoadProgress({...p,label:`解析 ${name}`}),streamOpts);
         else{const blob=await response.blob();parsed=await parseJSONLFile(new File([blob],name,{type:'application/jsonl'}),p=>updateLoadProgress({...p,label:`解析 ${name}`}),{...streamOpts,totalBytes:effectiveTotal||blob.size});}
-        if(!isCurrentLoadTask(task)||entry.loadTaskId!==task.id)return;entry.steps=parsed.steps||[];entry.loadState='loaded';delete entry.loadTaskId;updateFolderOption(name);if(state.currentFile===name){render();completeLoadProgress(name,effectiveTotal||totalBytes,entry.steps.length,entry.fullPath);}activeLoadTask=null;
+        if(!isCurrentLoadTask(task)||entry.loadTaskId!==task.id)return;entry.steps=parsed.steps||[];entry.loadState='loaded';delete entry.loadTaskId;delete entry.streamRendered;updateFolderOption(name);if(state.currentFile===name){render();completeLoadProgress(name,effectiveTotal||totalBytes,entry.steps.length,entry.fullPath);}activeLoadTask=null;
       }catch(err){
-        if(isAbortError(err)){if(entry.loadTaskId===task.id){entry.steps=[];entry.loadState='idle';delete entry.loadTaskId;updateFolderOption(name);}return;}
-        if(entry.loadTaskId!==task.id)return;console.error('Failed to lazily load folder trajectory',err);entry.steps=[];entry.loadState='error';delete entry.loadTaskId;updateFolderOption(name);if(state.currentFile===name){hideLoadProgress();setStatus(t('parseFailed')+name,false);}if(isCurrentLoadTask(task))activeLoadTask=null;
+        if(isAbortError(err)){if(entry.loadTaskId===task.id){entry.steps=[];entry.loadState='idle';delete entry.loadTaskId;delete entry.streamRendered;updateFolderOption(name);}return;}
+        if(entry.loadTaskId!==task.id)return;console.error('Failed to lazily load folder trajectory',err);entry.steps=[];entry.loadState='error';delete entry.loadTaskId;delete entry.streamRendered;updateFolderOption(name);if(state.currentFile===name){hideLoadProgress();setStatus(t('parseFailed')+name,false);}if(isCurrentLoadTask(task))activeLoadTask=null;
       }
     }
     function filenameFromUri(uri,fallback){
