@@ -89,11 +89,103 @@ export function activate(context: vscode.ExtensionContext) {
   };
 
   context.subscriptions.push(
-    vscode.window.registerCustomEditorProvider('trajv.jsonlViewer', provider, { webviewOptions: { retainContextWhenHidden: true } })
+    vscode.window.registerCustomEditorProvider('trajv.jsonlViewer', provider, { webviewOptions: { retainContextWhenHidden: true } }),
+    vscode.commands.registerCommand('trajv.openFolder', async (resource?: vscode.Uri) => {
+      let folderUri = resource;
+      if (!folderUri) {
+        const folders = vscode.workspace.workspaceFolders;
+        if (folders?.length === 1) folderUri = folders[0].uri;
+        else if (folders?.length) {
+          const picked = await vscode.window.showWorkspaceFolderPick({ placeHolder: '选择要在轨迹浏览器中打开的文件夹' });
+          folderUri = picked?.uri;
+        }
+      }
+      if (!folderUri) {
+        void vscode.window.showWarningMessage('请在资源管理器中右键点击文件夹。');
+        return;
+      }
+      const stat = await vscode.workspace.fs.stat(folderUri);
+      if (!(stat.type & vscode.FileType.Directory)) {
+        void vscode.window.showWarningMessage('“在轨迹浏览器打开”仅支持文件夹。');
+        return;
+      }
+      await openFolderViewer(folderUri, context);
+    })
   );
 }
 
 export function deactivate() {}
+
+async function openFolderViewer(folderUri: vscode.Uri, context: vscode.ExtensionContext): Promise<void> {
+  const folderName = path.posix.basename(folderUri.path) || 'Trajectories';
+  const panel = vscode.window.createWebviewPanel(
+    'trajv.folderViewer',
+    `TrajV: ${folderName}`,
+    vscode.ViewColumn.Active,
+    { enableScripts: true, retainContextWhenHidden: true, localResourceRoots: [folderUri, vscode.Uri.file(path.join(context.extensionPath, 'media'))] }
+  );
+  panel.webview.html = initialShellHtml();
+
+  const buildLoadMessage = async () => {
+    const uris = await findRolloutFiles(folderUri);
+    const files = [];
+    for (const uri of uris) {
+      const stat = await vscode.workspace.fs.stat(uri);
+      files.push({
+        uri: uri.toString(),
+        webviewUri: panel.webview.asWebviewUri(uri).toString(),
+        name: path.posix.relative(folderUri.path, uri.path) || path.posix.basename(uri.path),
+        size: stat.size,
+        mtime: stat.mtime
+      });
+    }
+    return { type: 'loadFolder', folderName, folderUri: folderUri.toString(), files };
+  };
+
+  let didSend = false;
+  const sendLoad = async (force = false) => {
+    if (didSend && !force) return;
+    didSend = true;
+    try {
+      await panel.webview.postMessage(await buildLoadMessage());
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      void panel.webview.postMessage({ type: 'loadError', message });
+    }
+  };
+  let fallbackTimer: ReturnType<typeof setTimeout> | undefined;
+  panel.webview.onDidReceiveMessage((msg) => {
+    if (msg?.type === 'ready') {
+      if (fallbackTimer) clearTimeout(fallbackTimer);
+      void sendLoad();
+    } else if (msg?.type === 'requestReload') {
+      void sendLoad(true);
+    }
+  });
+
+  try {
+    panel.webview.html = await getHtmlForWebview(panel.webview, context, folderUri);
+    fallbackTimer = setTimeout(() => void sendLoad(), 1500);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    panel.webview.html = basicHtml(`Failed to initialize TrajV: ${message}`);
+  }
+}
+
+async function findRolloutFiles(folderUri: vscode.Uri): Promise<vscode.Uri[]> {
+  const files: vscode.Uri[] = [];
+  const pending = [folderUri];
+  while (pending.length) {
+    const directory = pending.pop()!;
+    const entries = await vscode.workspace.fs.readDirectory(directory);
+    for (const [name, type] of entries) {
+      const uri = vscode.Uri.joinPath(directory, name);
+      if ((type & vscode.FileType.Directory) && !(type & vscode.FileType.SymbolicLink)) pending.push(uri);
+      else if ((type & vscode.FileType.File) && name.toLowerCase().endsWith('.rollout.jsonl')) files.push(uri);
+    }
+  }
+  return files.sort((a, b) => a.path.localeCompare(b.path));
+}
 
 function initialShellHtml(): string {
   return `<!DOCTYPE html>

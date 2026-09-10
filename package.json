@@ -37,6 +37,21 @@
   "main": "./out/extension.js",
   "activationEvents": [],
   "contributes": {
+    "commands": [
+      {
+        "command": "trajv.openFolder",
+        "title": "在轨迹浏览器打开"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "trajv.openFolder",
+          "when": "explorerResourceIsFolder",
+          "group": "navigation@8"
+        }
+      ]
+    },
     "customEditors": [
       {
         "viewType": "trajv.jsonlViewer",

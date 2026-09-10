@@ -31,6 +31,8 @@
   /* Compact mode: applied after文件加载，避免 header 被高区域撑开 */
   .file-area.compact{flex-direction:row;align-items:center;gap:.6rem;padding:.35rem .55rem;min-width:auto;max-width:none;border-style:solid;}
   .file-area.compact .file-hint{display:none !important;}
+  body.vscode-folder-mode #fileArea{display:none!important;}
+  body.vscode-folder-mode #trajectorySelect{display:block!important;min-width:220px;max-width:min(420px,32vw);}
   .file-area.dragover{border-color:var(--accent);background:#1b283b;}
   .file-actions{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;}
   .file-hint{font-size:.65rem;color:var(--muted);letter-spacing:.3px;}
@@ -541,7 +543,7 @@
     window.createJSONEditor = createJSONEditor;
   </script>
   <script>
-  const state={files:new Map(),currentFile:null,currentIndex:0,compareMode:false,compareIndex:0,autoCollapseSame:false,wrapStates:{},lang:(navigator.language||'').toLowerCase().startsWith('zh')?'zh':'en',inputMode:'rich',outputMode:'rich',inputEditor:null,outputEditor:null,layoutMode:'dual',fontSize:'md'};
+  const state={files:new Map(),currentFile:null,currentIndex:0,compareMode:false,compareIndex:0,autoCollapseSame:false,folderMode:false,wrapStates:{},lang:(navigator.language||'').toLowerCase().startsWith('zh')?'zh':'en',inputMode:'rich',outputMode:'rich',inputEditor:null,outputEditor:null,layoutMode:'dual',fontSize:'md'};
     const el=id=>document.getElementById(id);
   const fileInput=el('fileInput'),trajectorySelect=el('trajectorySelect');
     const firstStep=el('firstStep'),prevStep=el('prevStep'),nextStep=el('nextStep'),lastStep=el('lastStep');
@@ -585,8 +587,10 @@
   // i18n additions for image preview (non-breaking augment)
   if(!I18N.zh.zoom){ try{ Object.assign(I18N.zh, { zoom:'放大', previewTitle:'图片预览', close:'关闭' }); }catch(e){} }
   if(!I18N.en.zoom){ try{ Object.assign(I18N.en, { zoom:'Zoom', previewTitle:'Image Preview', close:'Close' }); }catch(e){} }
+  Object.assign(I18N.zh,{selectTrajectory:'请选择轨迹文件',folderReady:'发现 {count} 个轨迹文件，请选择后加载',folderEmpty:'文件夹中没有 .rollout.jsonl 文件',loadFailed:'加载失败'});
+  Object.assign(I18N.en,{selectTrajectory:'Select a trajectory file',folderReady:'Found {count} trajectory files; select one to load',folderEmpty:'No .rollout.jsonl files found',loadFailed:'Load failed'});
   function t(k){const lang=I18N[state.lang]||I18N.zh;return k.split('.').reduce((o,p)=>o&&o[p],lang)||k;}
-  function applyLangStatic(){titleText.textContent=t('title');folderBtn.textContent=t('selectFolder');selectFilesBtn.textContent=t('selectFiles');fileHint.textContent=t('hint');if(!state.files.size){statusEl.textContent=t('notLoaded');statusEl.style.display='';}stepLabel.textContent=t('step');stepDetailsBtn.textContent=t('stepDetails');compareStepDetailsBtn.textContent=t('stepDetails');compareToggle.textContent=t('diff');compareToggle.title=t('diff');autoCollapseLabel.title=t('autoCollapseSame');autoCollapseSame.setAttribute('aria-label',t('autoCollapseSame'));const modalTitle=document.getElementById('stepDetailsModalTitle');if(modalTitle)modalTitle.textContent=t('stepDetailsModalTitle');inputPanelTitle.textContent=t('inputMessages');outputPanelTitle.textContent=t('outputMessages');
+  function applyLangStatic(){titleText.textContent=t('title');folderBtn.textContent=t('selectFolder');selectFilesBtn.textContent=t('selectFiles');fileHint.textContent=t('hint');if(!state.files.size&&!state.folderMode){statusEl.textContent=t('notLoaded');statusEl.style.display='';}stepLabel.textContent=t('step');stepDetailsBtn.textContent=t('stepDetails');compareStepDetailsBtn.textContent=t('stepDetails');compareToggle.textContent=t('diff');compareToggle.title=t('diff');autoCollapseLabel.title=t('autoCollapseSame');autoCollapseSame.setAttribute('aria-label',t('autoCollapseSame'));const placeholder=trajectorySelect.querySelector('option[value=""]');if(placeholder)placeholder.textContent=t('selectTrajectory');const modalTitle=document.getElementById('stepDetailsModalTitle');if(modalTitle)modalTitle.textContent=t('stepDetailsModalTitle');inputPanelTitle.textContent=t('inputMessages');outputPanelTitle.textContent=t('outputMessages');
     // update mode buttons text
     document.querySelectorAll('.mode-buttons button').forEach(btn=>{const key=btn.getAttribute('data-i18n');if(key)btn.textContent=t(key);});
   exportCurrent.textContent=t('exportCurrent');exportTrajectory.textContent=t('exportTrajectory');
@@ -884,13 +888,14 @@
     dirInput.value='';
   }
   function refreshFileSelect(){trajectorySelect.innerHTML='';for(const name of state.files.keys()){const opt=document.createElement('option');opt.value=name;opt.textContent=name+' ('+state.files.get(name).steps.length+')';trajectorySelect.appendChild(opt);}trajectorySelect.disabled=!state.files.size;if(state.files.size){if(!state.currentFile||!state.files.has(state.currentFile))state.currentFile=trajectorySelect.options[0].value;trajectorySelect.value=state.currentFile;state.currentIndex=0;enterCompact();render();}else {clearDisplay();exitCompact();}}
-    trajectorySelect.addEventListener('change',()=>{state.currentFile=trajectorySelect.value;state.currentIndex=0;state.compareMode=false;render();});
+    trajectorySelect.addEventListener('change',async()=>{const name=trajectorySelect.value||null;state.currentFile=name;state.currentIndex=0;state.compareMode=false;if(state.folderMode){abortActiveLoad();if(!name){clearDisplay();return;}const entry=state.files.get(name);if(entry?.loadState==='loaded'){setLoadedFileStatus(name,entry.size||0,entry.fullPath||name);render();return;}await loadFolderTrajectory(name);return;}render();});
   function clearDisplay(){inputMessagesEl.innerHTML='';outputMessagesEl.innerHTML='';totalSteps.textContent='0';jumpStep.textContent='1';state.compareMode=false;updateCompareControls(0);updateLayoutUI();[firstStep,prevStep,nextStep,lastStep,exportBtn,stepDetailsBtn,compareStepDetailsBtn].forEach(b=>b.disabled=true);disableModeButtons(true);}
   function refreshStreamingUI(name){
     const entry=state.files.get(name);
     if(!entry)return;
     const total=entry.steps.length;
     for(const opt of trajectorySelect.options){if(opt.value===name){opt.textContent=name+' ('+total+')';break;}}
+    if(state.currentFile!==name)return;
     totalSteps.textContent=total;
     jumpStep.textContent=Math.min(state.currentIndex+1,total||1);
     [firstStep,prevStep,nextStep,lastStep,exportBtn,stepDetailsBtn].forEach(b=>b.disabled=false);
@@ -1686,6 +1691,8 @@
       return {steps};
     }
     function hideEditorOpenControls(){
+      state.folderMode=false;
+      document.body.classList.remove('vscode-folder-mode');
       const hide=(id)=>{const el=document.getElementById(id);if(el)el.style.display='none';};
       try{
         if(!document.getElementById('vscode-hide-style')){
@@ -1694,6 +1701,43 @@
       }catch(_){}
       hide('fileArea');hide('trajectorySelect');
       if(typeof enterCompact==='function')enterCompact();
+    }
+    function showFolderOpenControls(){
+      state.folderMode=true;
+      document.body.classList.add('vscode-folder-mode');
+      fileArea.style.display='none';
+      trajectorySelect.style.removeProperty('display');
+      enterCompact();
+    }
+    function updateFolderOption(name){
+      const entry=state.files.get(name);if(!entry)return;
+      for(const opt of trajectorySelect.options){if(opt.value!==name)continue;if(entry.loadState==='loading')opt.textContent=`${name} · ${t('loadingParsing')} (${entry.steps.length})`;else if(entry.loadState==='loaded')opt.textContent=`${name} (${entry.steps.length})`;else if(entry.loadState==='error')opt.textContent=`${name} · ${t('loadFailed')}`;else opt.textContent=name;break;}
+    }
+    function initializeFolderManifest(msg){
+      abortActiveLoad();showFolderOpenControls();state.files.clear();state.currentFile=null;state.currentIndex=0;state.compareMode=false;trajectorySelect.innerHTML='';
+      const files=Array.isArray(msg.files)?msg.files:[];
+      files.forEach(meta=>{const name=String(meta.name||filenameFromUri(meta.uri,'trajectory.rollout.jsonl'));state.files.set(name,{steps:[],mtime:meta.mtime||Date.now(),size:Number(meta.size)||0,fullPath:pathFromUri(meta.uri,name),webviewUri:meta.webviewUri,uri:meta.uri,loadState:'idle'});const opt=document.createElement('option');opt.value=name;opt.textContent=name;trajectorySelect.appendChild(opt);});
+      trajectorySelect.disabled=!files.length;clearDisplay();enterCompact();
+      if(!files.length){setStatus(t('folderEmpty'),false);return;}
+      const first=trajectorySelect.options[0].value;trajectorySelect.value=first;state.currentFile=first;setStatus(t('folderReady').replace('{count}',files.length));void loadFolderTrajectory(first);
+    }
+    async function loadFolderTrajectory(name){
+      const entry=state.files.get(name);if(!entry||entry.loadState==='loaded'){if(entry)render();return;}
+      const task=startLoadTask();entry.loadTaskId=task.id;entry.loadState='loading';entry.steps=[];updateFolderOption(name);state.currentFile=name;state.currentIndex=0;state.compareMode=false;clearDisplay();
+      const totalBytes=Number(entry.size)||0;
+      try{
+        showLoadProgress(`读取 ${name}`,0,totalBytes,0);await waitForInitialPaint();throwIfAborted(task.controller.signal);
+        const response=await fetch(entry.webviewUri);throwIfAborted(task.controller.signal);if(!response.ok)throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const effectiveTotal=totalBytes||Number(response.headers.get('content-length'))||0;
+        const streamOpts={signal:task.controller.signal,totalBytes:effectiveTotal,onStep:(accSteps)=>{if(!isCurrentLoadTask(task))return;entry.steps=accSteps;refreshStreamingUI(name);updateFolderOption(name);}};
+        let parsed;
+        if(response.body)parsed=await parseJSONLStream(response.body,p=>updateLoadProgress({...p,label:`解析 ${name}`}),streamOpts);
+        else{const blob=await response.blob();parsed=await parseJSONLFile(new File([blob],name,{type:'application/jsonl'}),p=>updateLoadProgress({...p,label:`解析 ${name}`}),{...streamOpts,totalBytes:effectiveTotal||blob.size});}
+        if(!isCurrentLoadTask(task)||entry.loadTaskId!==task.id)return;entry.steps=parsed.steps||[];entry.loadState='loaded';delete entry.loadTaskId;updateFolderOption(name);if(state.currentFile===name){render();completeLoadProgress(name,effectiveTotal||totalBytes,entry.steps.length,entry.fullPath);}activeLoadTask=null;
+      }catch(err){
+        if(isAbortError(err)){if(entry.loadTaskId===task.id){entry.steps=[];entry.loadState='idle';delete entry.loadTaskId;updateFolderOption(name);}return;}
+        if(entry.loadTaskId!==task.id)return;console.error('Failed to lazily load folder trajectory',err);entry.steps=[];entry.loadState='error';delete entry.loadTaskId;updateFolderOption(name);if(state.currentFile===name){hideLoadProgress();setStatus(t('parseFailed')+name,false);}if(isCurrentLoadTask(task))activeLoadTask=null;
+      }
     }
     function filenameFromUri(uri,fallback){
       try{const u=new URL(uri);const p=u.pathname||'';return decodeURIComponent(p.split('/').pop()||fallback||'Active Document');}
@@ -1999,6 +2043,10 @@
       window.addEventListener('message', async (event) => {
         const msg = event.data;
         if(!msg)return;
+        if(msg.type === 'loadFolder'){
+          initializeFolderManifest(msg);
+          return;
+        }
         if(msg.type === 'loadUri'){
           await loadFileFromWebviewUri(msg);
           return;
