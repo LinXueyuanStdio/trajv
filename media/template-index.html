@@ -176,6 +176,26 @@
   /* Settings button */
   .settings-btn{display:inline-flex;align-items:center;justify-content:center;background:var(--panel-alt);border:1px solid var(--border);border-radius:6px;padding:.4rem .5rem;cursor:pointer;transition:background .18s,border-color .18s;color:var(--text);}
   .settings-btn:hover{background:var(--accent-hover);color:#fff;border-color:var(--accent-hover);}
+  /* Compare control: the secondary stepper unfolds from the toggle's right edge. */
+  .compare-control{display:inline-flex;align-items:center;min-width:0;isolation:isolate;--compare-stepper-width:216px;}
+  .compare-toggle{height:30px;display:inline-flex;align-items:center;justify-content:center;padding:0 .7rem;white-space:nowrap;font-weight:600;letter-spacing:0;position:relative;z-index:2;transition:background-color .24s ease,border-color .24s ease,color .24s ease,box-shadow .32s ease,border-radius .42s cubic-bezier(.22,1,.36,1);}
+  .compare-toggle[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 0 0 1px #ffffff12 inset,0 4px 14px #0004;border-radius:6px;}
+  .compare-stepper-reveal{width:0;min-width:0;margin-left:0;overflow:clip;opacity:0;transform:translateX(-12px) scale(.965);transform-origin:left center;filter:blur(3px);pointer-events:none;transition:width .5s cubic-bezier(.22,1,.36,1),margin-left .5s cubic-bezier(.22,1,.36,1),opacity .24s ease .02s,transform .5s cubic-bezier(.22,1,.36,1),filter .28s ease;will-change:width,opacity,transform,filter;}
+  .compare-stepper-content{width:var(--compare-stepper-width);height:32px;display:flex;align-items:center;gap:7px;padding:1px;white-space:nowrap;}
+  .compare-stepper{flex:0 0 auto;width:max-content;box-shadow:0 5px 18px #0004;}
+  .compare-stepper .stepper-display{padding-inline:8px;}
+  .compare-control.active .compare-stepper-reveal{width:var(--compare-stepper-width);margin-left:6px;opacity:1;transform:translateX(0) scale(1);filter:blur(0);pointer-events:auto;transition:width .5s cubic-bezier(.22,1,.36,1),margin-left .5s cubic-bezier(.22,1,.36,1),opacity .3s ease .12s,transform .5s cubic-bezier(.22,1,.36,1),filter .34s ease .08s;}
+  .compare-stepper .stepper-btn,.compare-stepper .stepper-display{opacity:0;transform:translateX(-4px);transition:opacity .2s ease,transform .32s cubic-bezier(.22,1,.36,1),background-color .15s,color .15s;}
+  .compare-control.active .compare-stepper .stepper-btn,.compare-control.active .compare-stepper .stepper-display{opacity:1;transform:translateX(0);}
+  .compare-control.active .compare-stepper>*:nth-child(1){transition-delay:.1s;}.compare-control.active .compare-stepper>*:nth-child(2){transition-delay:.13s;}.compare-control.active .compare-stepper>*:nth-child(3){transition-delay:.16s;}.compare-control.active .compare-stepper>*:nth-child(4){transition-delay:.19s;}.compare-control.active .compare-stepper>*:nth-child(5){transition-delay:.22s;}
+  .auto-collapse-toggle{position:relative;display:inline-flex;align-items:center;justify-content:center;width:34px;height:22px;flex:0 0 34px;cursor:pointer;opacity:0;transform:translateX(-4px);transition:opacity .2s ease .22s,transform .32s cubic-bezier(.22,1,.36,1) .22s;}
+  .compare-control.active .auto-collapse-toggle{opacity:1;transform:translateX(0);}
+  .auto-collapse-toggle input{position:absolute;inline-size:1px;block-size:1px;opacity:0;pointer-events:none;}
+  .auto-collapse-track{position:relative;width:32px;height:18px;border:1px solid var(--border);border-radius:999px;background:#20252b;box-shadow:0 1px 2px #0007 inset;transition:background-color .2s ease,border-color .2s ease,box-shadow .2s ease;}
+  .auto-collapse-track::after{content:'';position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#a7adb4;box-shadow:0 1px 3px #0008;transition:transform .24s cubic-bezier(.22,1,.36,1),background-color .2s ease;}
+  .auto-collapse-toggle input:checked+.auto-collapse-track{background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 1px #ffffff18 inset,0 0 10px #3d82f638;}
+  .auto-collapse-toggle input:checked+.auto-collapse-track::after{transform:translateX(14px);background:#fff;}
+  .auto-collapse-toggle input:focus-visible+.auto-collapse-track{outline:2px solid #fff;outline-offset:2px;}
   /* Mac-style settings popover */
   .settings-popover{position:absolute;top:100%;right:0;margin-top:8px;background:var(--panel);border:1px solid var(--border);border-radius:10px;box-shadow:0 10px 32px rgba(0,0,0,.5),0 0 0 1px rgba(0,0,0,.2);padding:6px;min-width:180px;z-index:200;display:none;flex-direction:column;gap:2px;}
   .settings-popover.show{display:flex;}
@@ -192,6 +212,40 @@
   .columns.single-col{flex-direction:column;flex:none;}
   .columns.single-col .col{flex:none;overflow:visible;}
   .columns.single-col #inputMessages,.columns.single-col #outputMessages{flex:none;overflow-y:visible;}
+  /* Compare mode keeps two outer columns while stacking input/output inside each side. */
+  .columns.compare-mode{flex-direction:row;overflow-x:auto;}
+  .columns.compare-mode .col{flex:1 1 50%;overflow:hidden;}
+  .columns.compare-mode .mode-buttons{display:none;}
+  .compare-step-details{display:none;}
+  .columns.compare-mode .compare-step-details{display:inline-flex;}
+  .columns.compare-mode .panel-header{min-height:31px;}
+  .columns.compare-mode #inputMessages,.columns.compare-mode #outputMessages{display:flex;flex-direction:column;gap:.9rem;overflow-y:auto;}
+  .compare-message-group{display:flex;flex-direction:column;gap:.45rem;min-width:0;}
+  .compare-group-header{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:.45rem;min-height:28px;padding:.3rem .45rem;border:1px solid var(--border);border-radius:6px;background:color-mix(in srgb,var(--panel) 94%,transparent);box-shadow:0 5px 12px #0003;backdrop-filter:blur(8px);}
+  .compare-group-title{font-size:.68rem;font-weight:650;color:var(--text);text-transform:uppercase;letter-spacing:.5px;}
+  .diff-stats{margin-left:auto;display:flex;align-items:center;gap:.3rem;font:600 .58rem/1 ui-monospace,SFMono-Regular,Monaco,Menlo,Consolas,monospace;}
+  .diff-stat{padding:3px 5px;border-radius:4px;background:#30363d;color:var(--muted);}
+  .diff-stat.add{background:#173b25;color:#7ee787;}.diff-stat.remove{background:#4a1f24;color:#ff9b9b;}.diff-stat.change{background:#493b18;color:#f2cc60;}
+  .compare-message-list{display:flex;flex-direction:column;gap:.5rem;min-width:0;}
+  .compare-row-shell{min-width:0;display:flex;flex-direction:column;}
+  .compare-row-shell>.message{flex:1 0 auto;}
+  .compare-row-placeholder{flex:1 0 auto;min-height:34px;border:1px dashed #3fb95055;border-left:3px solid #3fb95055;border-radius:6px;background:repeating-linear-gradient(-45deg,#17342144 0,#17342144 5px,transparent 5px,transparent 10px);}
+  .compare-empty{padding:.65rem;border:1px dashed var(--border);border-radius:6px;color:var(--muted);font-size:.68rem;text-align:center;}
+  .message.diff-added{border-color:#2f7d46;border-left:3px solid #3fb950;background:linear-gradient(90deg,#193623 0,var(--panel) 22%);}
+  .message.diff-removed{border-color:#874047;border-left:3px solid #f85149;background:linear-gradient(90deg,#432126 0,var(--panel) 22%);}
+  .message.diff-changed{border-color:#8b7329;border-left:3px solid #d29922;background:linear-gradient(90deg,#3b321b 0,var(--panel) 22%);}
+  .message.diff-ghost{opacity:.72;filter:saturate(.78);}
+  .diff-badge{margin-left:auto;padding:2px 6px;border-radius:4px;font-size:.52rem;font-weight:700;letter-spacing:.35px;color:#fff;}
+  .diff-badge.added{background:#238636;}.diff-badge.removed{background:#b62324;}.diff-badge.changed{background:#9e6a03;}
+  .structured-diff{border:1px solid #ffffff17;border-radius:5px;background:#11161b;overflow:hidden;}
+  .structured-diff>summary{cursor:pointer;padding:.35rem .5rem;color:#c9d1d9;font-size:.62rem;user-select:none;background:#20262c;}
+  .structured-diff-list{display:flex;flex-direction:column;max-height:280px;overflow:auto;}
+  .structured-diff-row{display:grid;grid-template-columns:minmax(100px,32%) minmax(0,1fr);gap:.55rem;padding:.35rem .5rem;border-top:1px solid #30363d;font:normal .61rem/1.35 ui-monospace,SFMono-Regular,Monaco,Menlo,Consolas,monospace;}
+  .structured-diff-path{color:#8ab4f8;overflow-wrap:anywhere;}.structured-diff-value{margin:0;padding:0;border:0;background:transparent;max-height:none;white-space:pre-wrap;overflow-wrap:anywhere;color:#c9d1d9;}
+  .structured-diff-row.added .structured-diff-value,.diff-line.added{color:#7ee787;background:#1b472a;}.structured-diff-row.removed .structured-diff-value,.diff-line.removed{color:#ff9b9b;background:#56262c;}.structured-diff-row.changed .structured-diff-value{color:#f2cc60;}
+  .diff-line{display:block;padding:0 .25rem;white-space:pre-wrap;overflow-wrap:anywhere;}.diff-line.context{color:#8b949e;}
+  @media (max-width:1100px){.columns.compare-mode{flex-direction:row;}.columns.compare-mode .col{flex:0 0 min(560px,calc(100vw - 2rem));overflow:hidden;}.columns.compare-mode #inputMessages,.columns.compare-mode #outputMessages{overflow-y:auto;}}
+  @media (prefers-reduced-motion:reduce){.compare-stepper-reveal,.compare-stepper .stepper-btn,.compare-stepper .stepper-display,.compare-toggle,.auto-collapse-toggle,.auto-collapse-track,.auto-collapse-track::after{transition-duration:.01ms!important;transition-delay:0ms!important;}}
   /* Message font size */
   .font-sm .msg-content{font-size:.77rem;} .font-sm .msg-line{font-size:.7rem;} .font-sm .part-text{font-size:.6rem;} .font-sm .tool-call{font-size:.58rem;} .font-sm .tool-call-args code{font-size:.55rem;} .font-sm .part-fn-body{font-size:.58rem;} .font-sm .json-mini-line{font-size:.56rem;} .font-sm .part-reasoning{font-size:.62rem;} .font-sm .json-tree{font-size:.58rem;}
   .font-lg .msg-content{font-size:1.04rem;} .font-lg .msg-line{font-size:.94rem;} .font-lg .part-text{font-size:.8rem;} .font-lg .tool-call{font-size:.78rem;} .font-lg .tool-call-args code{font-size:.75rem;} .font-lg .part-fn-body{font-size:.78rem;} .font-lg .json-mini-line{font-size:.76rem;} .font-lg .part-reasoning{font-size:.83rem;} .font-lg .json-tree{font-size:.78rem;}
@@ -392,6 +446,28 @@
           </div>
         </div>
       </div>
+      <div class="compare-control" id="compareControl">
+        <button id="compareToggle" class="compare-toggle" disabled aria-pressed="false" aria-expanded="false">对比</button>
+        <div id="compareStepperReveal" class="compare-stepper-reveal" aria-hidden="true">
+          <div class="compare-stepper-content">
+            <div class="nav-stepper compare-stepper">
+              <button id="compareFirstStep" class="stepper-btn" disabled aria-label="对比第一步"><span class="stepper-icon chevrons-left"></span></button>
+              <button id="comparePrevStep" class="stepper-btn" disabled aria-label="对比上一步"><span class="stepper-icon chevron-left"></span></button>
+              <div class="stepper-display" id="compareStepperDisplay">
+                <span id="compareJumpStep" class="stepper-current">1</span>
+                <span class="stepper-sep">/</span>
+                <span id="compareTotalSteps">0</span>
+              </div>
+              <button id="compareNextStep" class="stepper-btn" disabled aria-label="对比下一步"><span class="stepper-icon chevron-right"></span></button>
+              <button id="compareLastStep" class="stepper-btn" disabled aria-label="对比最后一步"><span class="stepper-icon chevrons-right"></span></button>
+            </div>
+            <label class="auto-collapse-toggle" id="autoCollapseLabel" title="自动折叠相同消息">
+              <input id="autoCollapseSame" type="checkbox" role="switch" aria-label="自动折叠相同消息" />
+              <span class="auto-collapse-track" aria-hidden="true"></span>
+            </label>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="grow"></div>
     <div class="header-right">
@@ -431,6 +507,8 @@
             <button data-mode="rich" class="active" data-i18n="mode.rich">美化视图</button>
             <button data-mode="edit" data-i18n="mode.edit">编辑</button>
           </div>
+          <div style="flex:1"></div>
+          <button id="compareStepDetailsBtn" class="compare-step-details" disabled style="font-size:.7rem;padding:.3rem .6rem;" data-i18n="stepDetails">步骤详情</button>
         </div>
         <div id="outputMessages"></div>
       </div>
@@ -465,7 +543,7 @@
     window.createJSONEditor = createJSONEditor;
   </script>
   <script>
-  const state={files:new Map(),currentFile:null,currentIndex:0,wrapStates:{},lang:(navigator.language||'').toLowerCase().startsWith('zh')?'zh':'en',inputMode:'rich',outputMode:'rich',inputEditor:null,outputEditor:null,layoutMode:'dual',fontSize:'md'};
+  const state={files:new Map(),currentFile:null,currentIndex:0,compareMode:false,compareIndex:0,autoCollapseSame:false,wrapStates:{},lang:(navigator.language||'').toLowerCase().startsWith('zh')?'zh':'en',inputMode:'rich',outputMode:'rich',inputEditor:null,outputEditor:null,layoutMode:'dual',fontSize:'md'};
     const el=id=>document.getElementById(id);
   const fileInput=el('fileInput'),trajectorySelect=el('trajectorySelect');
     const firstStep=el('firstStep'),prevStep=el('prevStep'),nextStep=el('nextStep'),lastStep=el('lastStep');
@@ -474,8 +552,12 @@
   const exportCurrent=el('exportCurrent'),exportTrajectory=el('exportTrajectory');
   const exportBtn=el('exportBtn'),exportDropdown=el('exportDropdown'),exportMenu=el('exportMenu');
   const settingsBtn=el('settingsBtn'),settingsPopover=el('settingsPopover');
+  const compareControl=el('compareControl'),compareToggle=el('compareToggle'),compareStepperReveal=el('compareStepperReveal');
+  const compareFirstStep=el('compareFirstStep'),comparePrevStep=el('comparePrevStep'),compareNextStep=el('compareNextStep'),compareLastStep=el('compareLastStep');
+  const compareJumpStep=el('compareJumpStep'),compareTotalSteps=el('compareTotalSteps');
+  const autoCollapseSame=el('autoCollapseSame'),autoCollapseLabel=el('autoCollapseLabel');
   const columnsEl=document.querySelector('.columns');
-  const stepDetailsBtn=el('stepDetailsBtn');
+  const stepDetailsBtn=el('stepDetailsBtn'),compareStepDetailsBtn=el('compareStepDetailsBtn');
   const stepDetailsModal=el('stepDetailsModal');
   const stepDetailsEditor=el('stepDetailsEditor');
   const inputModeBtns=el('inputModeBtns'),outputModeBtns=el('outputModeBtns');
@@ -499,14 +581,14 @@
     function exitCompact(){fileArea.classList.remove('compact'); if(fileHint) fileHint.style.display='';}
 
     const I18N={
-  zh:{title:'轨迹浏览器',load:'载入',selectFolder:'选择文件夹',selectFiles:'选择文件',hint:'拖拽 JSONL 文件到此处 或 点击按钮选择',skipInfo:'已读取: {loaded} 个，跳过非 JSONL: {skipped} 个',notLoaded:'未加载文件',dragDrop:'拖拽 JSONL 文件到此处 或 使用上方文件选择',step:'步骤',stepDetails:'步骤详情',stepDetailsModalTitle:'步骤详情 - 原始 JSON',highlight:'高亮答案',unhighlight:'取消高亮',export:'导出',exportCurrent:'导出当前步骤',exportTrajectory:'导出轨迹',settings:'设置',layout:'布局',layoutDual:'双列布局',layoutSingle:'单列布局',fontSize:'字体大小',fontSizeSm:'小',fontSizeMd:'中',fontSizeLg:'大',language:'语言',inputMessages:'输入消息',outputMessages:'输出消息',mode:{rich:'美化视图',edit:'编辑'},copy:'复制',copied:'已复制',fold:'折叠',expandStructure:'展开结构',expandAll:'展开',collapseAll:'全部折叠',searchPlaceholder:'搜索...',wrapOn:'自适应换行',wrapOff:'横向滚动',edit:'编辑',edited:'已编辑',empty:'(空)',tools:'Tools',inferenceArgs:'Inference Args',meta:'Meta',originalStep:'原始 Step JSON',save:'保存',format:'格式化',fullscreen:'全屏',restore:'还原',reset:'恢复原始',back:'返回',diff:'对比',hideDiff:'隐藏对比',validJson:'有效 JSON',invalidRootArray:'根必须是数组',editingArray:'编辑 JSON 数组: message 列表',escHint:'ESC 取消 / Ctrl+S 保存',parseFailed:'解析失败: ',loadingParsing:'解析文件...',zoom:'放大',previewTitle:'图片预览',close:'关闭'},
-  en:{title:'Trajectory Browser',load:'Load',selectFolder:'Select Folder',selectFiles:'Select Files',hint:'Drag JSONL files here or click buttons',skipInfo:'Loaded: {loaded}, skipped non-JSONL: {skipped}',notLoaded:'No file loaded',dragDrop:'Drag JSONL files here or use selectors above',step:'Step',stepDetails:'Step Details',stepDetailsModalTitle:'Step Details - Raw JSON',highlight:'Highlight Answer',unhighlight:'Unhighlight',export:'Export',exportCurrent:'Export Current Step',exportTrajectory:'Export Trajectory',settings:'Settings',layout:'Layout',layoutDual:'Dual Column',layoutSingle:'Single Column',fontSize:'Font Size',fontSizeSm:'Small',fontSizeMd:'Medium',fontSizeLg:'Large',language:'Language',inputMessages:'Input Messages',outputMessages:'Output Messages',mode:{rich:'Rich View',edit:'Edit'},copy:'Copy',copied:'Copied',fold:'Fold',expandStructure:'Expand Structure',expandAll:'Expand',collapseAll:'Collapse All',searchPlaceholder:'Search...',wrapOn:'Wrap',wrapOff:'Horizontal',edit:'Edit',edited:'Edited',empty:'(empty)',tools:'Tools',inferenceArgs:'Inference Args',meta:'Meta',originalStep:'Raw Step JSON',save:'Save',format:'Format',fullscreen:'Fullscreen',restore:'Restore',reset:'Reset',back:'Back',diff:'Diff',hideDiff:'Hide Diff',validJson:'Valid JSON',invalidRootArray:'Root must be an array',editingArray:'Edit JSON array: messages list',escHint:'ESC Cancel / Ctrl+S Save',parseFailed:'Parse failed: ',loadingParsing:'Parsing files...',zoom:'Zoom',previewTitle:'Image Preview',close:'Close'}
+  zh:{title:'轨迹浏览器',load:'载入',selectFolder:'选择文件夹',selectFiles:'选择文件',hint:'拖拽 JSONL 文件到此处 或 点击按钮选择',skipInfo:'已读取: {loaded} 个，跳过非 JSONL: {skipped} 个',notLoaded:'未加载文件',dragDrop:'拖拽 JSONL 文件到此处 或 使用上方文件选择',step:'步骤',stepDetails:'步骤详情',stepDetailsModalTitle:'步骤详情 - 原始 JSON',leftStepTitle:'步骤 {index}',rightStepTitle:'对比步骤 {index}',autoCollapseSame:'自动折叠相同消息',highlight:'高亮答案',unhighlight:'取消高亮',export:'导出',exportCurrent:'导出当前步骤',exportTrajectory:'导出轨迹',settings:'设置',layout:'布局',layoutDual:'双列布局',layoutSingle:'单列布局',fontSize:'字体大小',fontSizeSm:'小',fontSizeMd:'中',fontSizeLg:'大',language:'语言',inputMessages:'输入消息',outputMessages:'输出消息',mode:{rich:'美化视图',edit:'编辑'},copy:'复制',copied:'已复制',fold:'折叠',expandStructure:'展开结构',expandAll:'展开',collapseAll:'全部折叠',searchPlaceholder:'搜索...',wrapOn:'自适应换行',wrapOff:'横向滚动',edit:'编辑',edited:'已编辑',empty:'(空)',tools:'Tools',inferenceArgs:'Inference Args',meta:'Meta',originalStep:'原始 Step JSON',save:'保存',format:'格式化',fullscreen:'全屏',restore:'还原',reset:'恢复原始',back:'返回',diff:'对比',hideDiff:'隐藏对比',compareStep:'对比步骤',fieldChanges:'{count} 项字段差异',added:'新增',removed:'删除',changed:'修改',unchanged:'无差异',emptyMessages:'暂无消息',validJson:'有效 JSON',invalidRootArray:'根必须是数组',editingArray:'编辑 JSON 数组: message 列表',escHint:'ESC 取消 / Ctrl+S 保存',parseFailed:'解析失败: ',loadingParsing:'解析文件...',zoom:'放大',previewTitle:'图片预览',close:'关闭'},
+  en:{title:'Trajectory Browser',load:'Load',selectFolder:'Select Folder',selectFiles:'Select Files',hint:'Drag JSONL files here or click buttons',skipInfo:'Loaded: {loaded}, skipped non-JSONL: {skipped}',notLoaded:'No file loaded',dragDrop:'Drag JSONL files here or use selectors above',step:'Step',stepDetails:'Step Details',stepDetailsModalTitle:'Step Details - Raw JSON',leftStepTitle:'Step {index}',rightStepTitle:'Compare Step {index}',autoCollapseSame:'Auto-collapse identical messages',highlight:'Highlight Answer',unhighlight:'Unhighlight',export:'Export',exportCurrent:'Export Current Step',exportTrajectory:'Export Trajectory',settings:'Settings',layout:'Layout',layoutDual:'Dual Column',layoutSingle:'Single Column',fontSize:'Font Size',fontSizeSm:'Small',fontSizeMd:'Medium',fontSizeLg:'Large',language:'Language',inputMessages:'Input Messages',outputMessages:'Output Messages',mode:{rich:'Rich View',edit:'Edit'},copy:'Copy',copied:'Copied',fold:'Fold',expandStructure:'Expand Structure',expandAll:'Expand',collapseAll:'Collapse All',searchPlaceholder:'Search...',wrapOn:'Wrap',wrapOff:'Horizontal',edit:'Edit',edited:'Edited',empty:'(empty)',tools:'Tools',inferenceArgs:'Inference Args',meta:'Meta',originalStep:'Raw Step JSON',save:'Save',format:'Format',fullscreen:'Fullscreen',restore:'Restore',reset:'Reset',back:'Back',diff:'Compare',hideDiff:'Hide Diff',compareStep:'Compare Step',fieldChanges:'{count} field changes',added:'Added',removed:'Removed',changed:'Changed',unchanged:'No differences',emptyMessages:'No messages',validJson:'Valid JSON',invalidRootArray:'Root must be an array',editingArray:'Edit JSON array: messages list',escHint:'ESC Cancel / Ctrl+S Save',parseFailed:'Parse failed: ',loadingParsing:'Parsing files...',zoom:'Zoom',previewTitle:'Image Preview',close:'Close'}
   };
   // i18n additions for image preview (non-breaking augment)
   if(!I18N.zh.zoom){ try{ Object.assign(I18N.zh, { zoom:'放大', previewTitle:'图片预览', close:'关闭' }); }catch(e){} }
   if(!I18N.en.zoom){ try{ Object.assign(I18N.en, { zoom:'Zoom', previewTitle:'Image Preview', close:'Close' }); }catch(e){} }
   function t(k){const lang=I18N[state.lang]||I18N.zh;return k.split('.').reduce((o,p)=>o&&o[p],lang)||k;}
-  function applyLangStatic(){titleText.textContent=t('title');folderBtn.textContent=t('selectFolder');selectFilesBtn.textContent=t('selectFiles');fileHint.textContent=t('hint');if(!state.files.size){statusEl.textContent=t('notLoaded');statusEl.style.display='';}stepLabel.textContent=t('step');stepDetailsBtn.textContent=t('stepDetails');const modalTitle=document.getElementById('stepDetailsModalTitle');if(modalTitle)modalTitle.textContent=t('stepDetailsModalTitle');inputPanelTitle.textContent=t('inputMessages');outputPanelTitle.textContent=t('outputMessages');
+  function applyLangStatic(){titleText.textContent=t('title');folderBtn.textContent=t('selectFolder');selectFilesBtn.textContent=t('selectFiles');fileHint.textContent=t('hint');if(!state.files.size){statusEl.textContent=t('notLoaded');statusEl.style.display='';}stepLabel.textContent=t('step');stepDetailsBtn.textContent=t('stepDetails');compareStepDetailsBtn.textContent=t('stepDetails');compareToggle.textContent=t('diff');compareToggle.title=t('diff');autoCollapseLabel.title=t('autoCollapseSame');autoCollapseSame.setAttribute('aria-label',t('autoCollapseSame'));const modalTitle=document.getElementById('stepDetailsModalTitle');if(modalTitle)modalTitle.textContent=t('stepDetailsModalTitle');inputPanelTitle.textContent=t('inputMessages');outputPanelTitle.textContent=t('outputMessages');
     // update mode buttons text
     document.querySelectorAll('.mode-buttons button').forEach(btn=>{const key=btn.getAttribute('data-i18n');if(key)btn.textContent=t(key);});
   exportCurrent.textContent=t('exportCurrent');exportTrajectory.textContent=t('exportTrajectory');
@@ -804,8 +886,8 @@
     dirInput.value='';
   }
   function refreshFileSelect(){trajectorySelect.innerHTML='';for(const name of state.files.keys()){const opt=document.createElement('option');opt.value=name;opt.textContent=name+' ('+state.files.get(name).steps.length+')';trajectorySelect.appendChild(opt);}trajectorySelect.disabled=!state.files.size;if(state.files.size){if(!state.currentFile||!state.files.has(state.currentFile))state.currentFile=trajectorySelect.options[0].value;trajectorySelect.value=state.currentFile;state.currentIndex=0;enterCompact();render();}else {clearDisplay();exitCompact();}}
-    trajectorySelect.addEventListener('change',()=>{state.currentFile=trajectorySelect.value;state.currentIndex=0;render();});
-  function clearDisplay(){inputMessagesEl.innerHTML='';outputMessagesEl.innerHTML='';totalSteps.textContent='0';jumpStep.textContent='1';[firstStep,prevStep,nextStep,lastStep,exportBtn,stepDetailsBtn].forEach(b=>b.disabled=true);disableModeButtons(true);}
+    trajectorySelect.addEventListener('change',()=>{state.currentFile=trajectorySelect.value;state.currentIndex=0;state.compareMode=false;render();});
+  function clearDisplay(){inputMessagesEl.innerHTML='';outputMessagesEl.innerHTML='';totalSteps.textContent='0';jumpStep.textContent='1';state.compareMode=false;updateCompareControls(0);updateLayoutUI();[firstStep,prevStep,nextStep,lastStep,exportBtn,stepDetailsBtn,compareStepDetailsBtn].forEach(b=>b.disabled=true);disableModeButtons(true);}
   function refreshStreamingUI(name){
     const entry=state.files.get(name);
     if(!entry)return;
@@ -817,16 +899,17 @@
     disableModeButtons(false);
     firstStep.disabled=prevStep.disabled=state.currentIndex===0;
     lastStep.disabled=nextStep.disabled=state.currentIndex>=total-1;
-    if(state.currentFile===name&&state.currentIndex<total){
-      renderMessages(entry.steps[state.currentIndex]);
-    }
+    if(state.currentFile===name&&state.currentIndex<total)render();
   }
   function disableModeButtons(disabled){document.querySelectorAll('.mode-buttons button').forEach(b=>b.disabled=disabled);}
-    function render(){if(!state.currentFile){clearDisplay();applyLangStatic();return;}const {steps}=state.files.get(state.currentFile);const total=steps.length;if(!total){clearDisplay();applyLangStatic();return;}state.currentIndex=Math.min(Math.max(0,state.currentIndex),total-1);const stepObj=steps[state.currentIndex];totalSteps.textContent=total;jumpStep.textContent=state.currentIndex+1;[firstStep,prevStep,nextStep,lastStep,exportBtn,stepDetailsBtn].forEach(b=>b.disabled=false);disableModeButtons(false);firstStep.disabled=prevStep.disabled=state.currentIndex===0;lastStep.disabled=nextStep.disabled=state.currentIndex===total-1;renderMessages(stepObj);updateModeButtonsUI();}
+    function render(){if(!state.currentFile){clearDisplay();applyLangStatic();return;}const {steps}=state.files.get(state.currentFile);const total=steps.length;if(!total){clearDisplay();applyLangStatic();return;}state.currentIndex=Math.min(Math.max(0,state.currentIndex),total-1);state.compareIndex=Math.min(Math.max(0,state.compareIndex),total-1);const stepObj=steps[state.currentIndex];totalSteps.textContent=total;jumpStep.textContent=state.currentIndex+1;[firstStep,prevStep,nextStep,lastStep,exportBtn,stepDetailsBtn].forEach(b=>b.disabled=false);compareStepDetailsBtn.disabled=!state.compareMode;disableModeButtons(false);firstStep.disabled=prevStep.disabled=state.currentIndex===0;lastStep.disabled=nextStep.disabled=state.currentIndex===total-1;updateCompareControls(total);updateLayoutUI();if(state.compareMode)renderCompareMessages(stepObj,steps[state.compareIndex]);else renderMessages(stepObj);updateModeButtonsUI();}
   // Initialize page - disable mode buttons initially
   disableModeButtons(true);
   applyLangStatic();
     function renderMessages(stepObj){
+      compareResizeObserver?.disconnect();
+      inputPanelTitle.textContent=t('inputMessages');
+      outputPanelTitle.textContent=t('outputMessages');
       const inList=stepObj.edited_input_messages||stepObj.input_messages||[];
       const outList=stepObj.edited_output_messages||stepObj.output_messages||[];
 
@@ -854,6 +937,138 @@
         outList.forEach((m,i)=>outputMessagesEl.appendChild(createMessageEl(m,i,'output',stepObj.is_answer,!!stepObj.edited_output_messages)));
       }
     }
+
+  function effectiveMessages(stepObj,kind){return kind==='input'?(stepObj.edited_input_messages||stepObj.input_messages||[]):(stepObj.edited_output_messages||stepObj.output_messages||[]);}
+  function cleanupMessageContainer(container){if(container.firstChild&&container.firstChild._editor){try{container.firstChild._editor.destroy();}catch(e){}}container.innerHTML='';}
+  function stableStringify(value){
+    if(value===undefined)return'undefined';
+    if(value===null||typeof value!=='object')return JSON.stringify(value);
+    if(Array.isArray(value))return'['+value.map(stableStringify).join(',')+']';
+    return'{'+Object.keys(value).sort().map(k=>JSON.stringify(k)+':'+stableStringify(value[k])).join(',')+'}';
+  }
+  function strongMessageId(msg){if(!msg||typeof msg!=='object')return'';const id=msg.id||msg.call_id||msg.tool_call_id;return id?String(id):'';}
+  function messageShape(msg){if(!msg||typeof msg!=='object')return typeof msg;return [msg.role||msg.sender||'',msg.type||'',msg.name||msg.function?.name||''].join('|');}
+  function sameMessageAnchor(a,b){const aid=strongMessageId(a),bid=strongMessageId(b);return (aid&&bid&&aid===bid)||stableStringify(a)===stableStringify(b);}
+  function compatibleMessages(a,b){const aid=strongMessageId(a),bid=strongMessageId(b);if(aid&&bid)return aid===bid;return messageShape(a)===messageShape(b);}
+
+  // Myers sequence diff keeps unchanged structured messages aligned even when a step inserts or removes entries.
+  function myersMessageDiff(left,right){
+    const n=left.length,m=right.length,max=n+m,v=new Map([[1,0]]),trace=[];
+    for(let d=0;d<=max;d++){
+      trace.push(new Map(v));
+      for(let k=-d;k<=d;k+=2){
+        const goDown=k===-d||(k!==d&&(v.get(k-1)??-1)<(v.get(k+1)??-1));
+        let x=goDown?(v.get(k+1)??0):(v.get(k-1)??0)+1;
+        let y=x-k;
+        while(x<n&&y<m&&sameMessageAnchor(left[x],right[y])){x++;y++;}
+        v.set(k,x);
+        if(x>=n&&y>=m)return backtrackMyers(trace,left,right);
+      }
+    }
+    return[];
+  }
+  function backtrackMyers(trace,left,right){
+    let x=left.length,y=right.length;const ops=[];
+    for(let d=trace.length-1;d>=0;d--){
+      const v=trace[d],k=x-y;
+      const prevK=k===-d||(k!==d&&(v.get(k-1)??-1)<(v.get(k+1)??-1))?k+1:k-1;
+      const prevX=v.get(prevK)??0,prevY=prevX-prevK;
+      while(x>prevX&&y>prevY){const exact=stableStringify(left[x-1])===stableStringify(right[y-1]);ops.push({type:exact?'equal':'changed',left:left[x-1],right:right[y-1],leftIndex:x-1,rightIndex:y-1});x--;y--;}
+      if(d===0)break;
+      if(x===prevX){ops.push({type:'added',right:right[y-1],rightIndex:y-1});y--;}
+      else{ops.push({type:'removed',left:left[x-1],leftIndex:x-1});x--;}
+    }
+    return ops.reverse();
+  }
+  function refineMessageDiff(raw){
+    const result=[];
+    for(let p=0;p<raw.length;){
+      if(raw[p].type==='equal'||raw[p].type==='changed'){result.push(raw[p++]);continue;}
+      const block=[];while(p<raw.length&&raw[p].type!=='equal'&&raw[p].type!=='changed')block.push(raw[p++]);
+      const removed=block.filter(o=>o.type==='removed'),added=block.filter(o=>o.type==='added');
+      const rows=removed.length,cols=added.length,dp=Array.from({length:rows+1},()=>Array(cols+1).fill(0));
+      for(let i=rows-1;i>=0;i--)for(let j=cols-1;j>=0;j--)dp[i][j]=compatibleMessages(removed[i].left,added[j].right)?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);
+      let i=0,j=0;
+      while(i<rows||j<cols){
+        if(i<rows&&j<cols&&compatibleMessages(removed[i].left,added[j].right)&&dp[i][j]===dp[i+1][j+1]+1){result.push({type:'changed',left:removed[i].left,right:added[j].right,leftIndex:removed[i].leftIndex,rightIndex:added[j].rightIndex});i++;j++;}
+        else if(j<cols&&(i===rows||dp[i][j+1]>=dp[i+1][j]))result.push(added[j++]);
+        else result.push(removed[i++]);
+      }
+    }
+    return result;
+  }
+  function diffStructuredMessages(left,right){return refineMessageDiff(myersMessageDiff(left,right));}
+
+  function normalizeDiffValue(value,key=''){
+    if(typeof value==='string'&&/(arguments|parameters|input|output|payload|data)$/i.test(key)&&/^[\s]*[\[{]/.test(value)){try{return normalizeDiffValue(JSON.parse(value),key);}catch(e){}}
+    if(Array.isArray(value))return value.map(v=>normalizeDiffValue(v,key));
+    if(value&&typeof value==='object'){const out={};Object.keys(value).sort().forEach(k=>out[k]=normalizeDiffValue(value[k],k));return out;}
+    return value;
+  }
+  function diffPath(base,key,isArray){return isArray?`${base}[${key}]`:/^[A-Za-z_$][\w$]*$/.test(key)?`${base}.${key}`:`${base}[${JSON.stringify(key)}]`;}
+  function flattenDiffValue(value,path,map){
+    if(Array.isArray(value)){if(!value.length)map.set(path,[]);else value.forEach((v,i)=>flattenDiffValue(v,diffPath(path,i,true),map));return;}
+    if(value&&typeof value==='object'){const keys=Object.keys(value);if(!keys.length)map.set(path,{});else keys.forEach(k=>flattenDiffValue(value[k],diffPath(path,k,false),map));return;}
+    map.set(path,value);
+  }
+  function diffLines(before,after){
+    const a=String(before).replace(/\r/g,'').split('\n'),b=String(after).replace(/\r/g,'').split('\n');
+    if(a.length*b.length>40000)return [...a.map(value=>({type:'removed',value})),...b.map(value=>({type:'added',value}))];
+    const dp=Array.from({length:a.length+1},()=>new Uint32Array(b.length+1));
+    for(let i=a.length-1;i>=0;i--)for(let j=b.length-1;j>=0;j--)dp[i][j]=a[i]===b[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);
+    const out=[];let i=0,j=0;
+    while(i<a.length||j<b.length){if(i<a.length&&j<b.length&&a[i]===b[j]){out.push({type:'context',value:a[i]});i++;j++;}else if(j<b.length&&(i===a.length||dp[i][j+1]>=dp[i+1][j]))out.push({type:'added',value:b[j++]});else out.push({type:'removed',value:a[i++]});}
+    return out;
+  }
+  function diffMessageFields(left,right){
+    const a=new Map(),b=new Map();flattenDiffValue(normalizeDiffValue(left),'$',a);flattenDiffValue(normalizeDiffValue(right),'$',b);
+    const paths=[...new Set([...a.keys(),...b.keys()])].sort(),changes=[];
+    paths.forEach(path=>{const hasA=a.has(path),hasB=b.has(path),before=a.get(path),after=b.get(path);if(!hasA)changes.push({path,type:'added',after});else if(!hasB)changes.push({path,type:'removed',before});else if(stableStringify(before)!==stableStringify(after))changes.push({path,type:'changed',before,after,lines:typeof before==='string'&&typeof after==='string'?diffLines(before,after):null});});
+    return changes;
+  }
+  function formatDiffValue(value){let text=typeof value==='string'?value:JSON.stringify(value,null,2);if(text===undefined)text='undefined';return text.length>1200?text.slice(0,1200)+'\n…':text;}
+  function buildStructuredDiff(changes,side){
+    const details=document.createElement('details');details.className='structured-diff';details.open=changes.length<=6;
+    const summary=document.createElement('summary');summary.textContent=t('fieldChanges').replace('{count}',changes.length);details.appendChild(summary);
+    const list=document.createElement('div');list.className='structured-diff-list';
+    changes.slice(0,160).forEach(change=>{const row=document.createElement('div');row.className='structured-diff-row '+change.type;const path=document.createElement('span');path.className='structured-diff-path';path.textContent=change.path;const value=document.createElement('pre');value.className='structured-diff-value';
+      if(change.lines){change.lines.filter(line=>line.type==='context'||(side==='left'?line.type==='removed':line.type==='added')).forEach(line=>{const span=document.createElement('span');span.className='diff-line '+line.type;span.textContent=(line.type==='removed'?'- ':line.type==='added'?'+ ':'  ')+line.value;value.appendChild(span);});}
+      else value.textContent=formatDiffValue(side==='left'?(change.before!==undefined?change.before:change.after):(change.after!==undefined?change.after:change.before));
+      row.append(path,value);list.appendChild(row);});
+    details.appendChild(list);return details;
+  }
+  function decorateDiffMessage(node,type,changes,side){
+    if(type==='equal'){if(state.autoCollapseSame)node.classList.add('collapsed');return node;}
+    node.classList.add('diff-'+type);
+    const badge=document.createElement('span');badge.className='diff-badge '+type;badge.textContent=t(type==='added'?'added':type==='removed'?'removed':'changed');node.querySelector('.msg-header')?.appendChild(badge);
+    if(type==='changed'&&changes.length)node.querySelector('.msg-body')?.appendChild(buildStructuredDiff(changes,side));
+    return node;
+  }
+  function compareStats(ops){return ops.reduce((s,o)=>{if(o.type==='added')s.added++;else if(o.type==='removed')s.removed++;else if(o.type==='changed')s.changed++;return s;},{added:0,removed:0,changed:0});}
+  function wrapCompareRow(node,key){const shell=document.createElement('div');shell.className='compare-row-shell';shell.dataset.compareRow=key;shell.appendChild(node);return shell;}
+  function buildComparePlaceholder(){const placeholder=document.createElement('div');placeholder.className='compare-row-placeholder';placeholder.setAttribute('aria-hidden','true');return placeholder;}
+  function buildCompareGroup(title,ops,side,kind,isAnswer,editedFlag){
+    const section=document.createElement('section');section.className='compare-message-group';section.dataset.compareGroup=kind;const header=document.createElement('div');header.className='compare-group-header';const heading=document.createElement('span');heading.className='compare-group-title';heading.textContent=title;header.appendChild(heading);
+    const stats=compareStats(ops),statsEl=document.createElement('span');statsEl.className='diff-stats';[['add','added','+'],['remove','removed','-'],['change','changed','~']].forEach(([cls,key,prefix])=>{if(stats[key]){const item=document.createElement('span');item.className='diff-stat '+cls;item.textContent=prefix+stats[key];statsEl.appendChild(item);}});if(!stats.added&&!stats.removed&&!stats.changed){const same=document.createElement('span');same.className='diff-stat';same.textContent=t('unchanged');statsEl.appendChild(same);}header.appendChild(statsEl);section.appendChild(header);
+    const list=document.createElement('div');list.className='compare-message-list';let rendered=0;
+    ops.forEach((op,opIndex)=>{const key=`${kind}:${opIndex}`;if(side==='left'&&op.type==='added'){list.appendChild(wrapCompareRow(buildComparePlaceholder(),key));rendered++;return;}const ghost=side==='right'&&op.type==='removed';const msg=side==='left'?op.left:(ghost?op.left:op.right);if(msg===undefined)return;const idx=side==='left'?(op.leftIndex??0):(ghost?(op.leftIndex??0):(op.rightIndex??0));const changes=op.type==='changed'?diffMessageFields(op.left,op.right):[];const node=decorateDiffMessage(createMessageEl(msg,idx,kind,isAnswer,editedFlag),op.type,changes,side);if(ghost)node.classList.add('diff-ghost');list.appendChild(wrapCompareRow(node,key));rendered++;});
+    if(!rendered){const empty=document.createElement('div');empty.className='compare-empty';empty.textContent=t('emptyMessages');list.appendChild(empty);}section.appendChild(list);return section;
+  }
+  function renderCompareMessages(leftStep,rightStep){
+    cleanupMessageContainer(inputMessagesEl);cleanupMessageContainer(outputMessagesEl);inputPanelTitle.textContent=t('leftStepTitle').replace('{index}',state.currentIndex+1);outputPanelTitle.textContent=t('rightStepTitle').replace('{index}',state.compareIndex+1);
+    ['input','output'].forEach(kind=>{const left=effectiveMessages(leftStep,kind),right=effectiveMessages(rightStep,kind),ops=diffStructuredMessages(left,right),title=kind==='input'?t('inputMessages'):t('outputMessages');inputMessagesEl.appendChild(buildCompareGroup(title,ops,'left',kind,leftStep.is_answer,!!leftStep[`edited_${kind}_messages`]));outputMessagesEl.appendChild(buildCompareGroup(title,ops,'right',kind,rightStep.is_answer,!!rightStep[`edited_${kind}_messages`]));});
+    installCompareAlignment();
+  }
+  let compareResizeObserver=null,compareAlignFrame=0,compareScrollSync=false;
+  function syncCompareRows(){
+    cancelAnimationFrame(compareAlignFrame);compareAlignFrame=requestAnimationFrame(()=>{const pairs=new Map();columnsEl.querySelectorAll('.compare-row-shell').forEach(shell=>{const key=shell.dataset.compareRow;if(!pairs.has(key))pairs.set(key,[]);pairs.get(key).push(shell);});pairs.forEach(shells=>{const height=Math.ceil(Math.max(...shells.map(shell=>shell.firstElementChild?.getBoundingClientRect().height||0)));shells.forEach(shell=>{const next=height+'px';if(shell.style.minHeight!==next)shell.style.minHeight=next;});});});
+  }
+  function installCompareAlignment(){
+    compareResizeObserver?.disconnect();if('ResizeObserver'in window){compareResizeObserver=new ResizeObserver(syncCompareRows);columnsEl.querySelectorAll('.compare-row-shell>*').forEach(node=>compareResizeObserver.observe(node));}syncCompareRows();
+  }
+  function syncCompareScroll(source,target){if(!state.compareMode||compareScrollSync)return;compareScrollSync=true;target.scrollTop=source.scrollTop;requestAnimationFrame(()=>{compareScrollSync=false;});}
+  inputMessagesEl.addEventListener('scroll',()=>syncCompareScroll(inputMessagesEl,outputMessagesEl),{passive:true});
+  outputMessagesEl.addEventListener('scroll',()=>syncCompareScroll(outputMessagesEl,inputMessagesEl),{passive:true});
   function updateModeButtonsUI(){document.querySelectorAll('#inputModeBtns button').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.inputMode));document.querySelectorAll('#outputModeBtns button').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.outputMode));}
   function initModeButtons(){['input','output'].forEach(kind=>{const root=el(kind==='input'?'inputModeBtns':'outputModeBtns');root.querySelectorAll('button').forEach(btn=>{btn.addEventListener('click',()=>{const mode=btn.dataset.mode; if(kind==='input'){state.inputMode=mode;} else {state.outputMode=mode;} updateModeButtonsUI(); render();});});});}
   initModeButtons();
@@ -880,12 +1095,42 @@
   }
   settingsBtn.addEventListener('click',(e)=>{e.stopPropagation();toggleSettingsPopover();});
 
+  // --- Compare mode and its independent stepper ---
+  function updateCompareControls(total){
+    const hasSteps=total>0;compareToggle.disabled=!hasSteps;compareTotalSteps.textContent=total;compareJumpStep.textContent=hasSteps?state.compareIndex+1:1;
+    compareControl.style.setProperty('--compare-stepper-width',(216+Math.max(0,String(total||0).length-2)*8)+'px');
+    autoCollapseSame.checked=state.autoCollapseSame;
+    compareControl.classList.toggle('active',state.compareMode&&hasSteps);compareToggle.setAttribute('aria-pressed',String(state.compareMode&&hasSteps));compareToggle.setAttribute('aria-expanded',String(state.compareMode&&hasSteps));compareStepperReveal.setAttribute('aria-hidden',String(!(state.compareMode&&hasSteps)));
+    [compareFirstStep,comparePrevStep,compareNextStep,compareLastStep].forEach(btn=>btn.disabled=!hasSteps||!state.compareMode);
+    if(hasSteps&&state.compareMode){compareFirstStep.disabled=comparePrevStep.disabled=state.compareIndex===0;compareLastStep.disabled=compareNextStep.disabled=state.compareIndex===total-1;}
+  }
+  function setCompareMode(active){
+    if(active&&state.currentFile){const total=state.files.get(state.currentFile)?.steps.length||0;if(!total)return;if(!state.compareMode)state.compareIndex=state.currentIndex<total-1?state.currentIndex+1:Math.max(0,state.currentIndex-1);}
+    state.compareMode=!!active;closeSettingsPopover();closeExportDropdown();render();
+  }
+  compareToggle.addEventListener('click',()=>setCompareMode(!state.compareMode));
+  autoCollapseSame.addEventListener('change',()=>{state.autoCollapseSame=autoCollapseSame.checked;if(state.compareMode)render();});
+  compareFirstStep.addEventListener('click',()=>{state.compareIndex=0;render();});
+  comparePrevStep.addEventListener('click',()=>{state.compareIndex--;render();});
+  compareNextStep.addEventListener('click',()=>{state.compareIndex++;render();});
+  compareLastStep.addEventListener('click',()=>{const total=state.files.get(state.currentFile)?.steps.length||1;state.compareIndex=total-1;render();});
+  (function initCompareStepperEdit(){
+    const display=el('compareStepperDisplay');let editing=false;if(!display)return;
+    display.addEventListener('click',()=>{if(editing||!state.compareMode||!state.currentFile)return;const total=state.files.get(state.currentFile)?.steps.length||0;if(!total)return;editing=true;const original=compareJumpStep.textContent;compareJumpStep.classList.add('editing');const input=document.createElement('input');input.type='number';input.min='1';input.max=String(total);input.value=String(state.compareIndex+1);input.className='stepper-edit-input';compareJumpStep.textContent='';compareJumpStep.appendChild(input);input.focus();input.select();
+      const cleanup=()=>{editing=false;compareJumpStep.classList.remove('editing');if(input.parentNode)input.remove();display.removeEventListener('keydown',onKey);};
+      const commit=()=>{const value=parseInt(input.value,10);if(!Number.isNaN(value)&&value>=1&&value<=total){state.compareIndex=value-1;cleanup();render();}else{compareJumpStep.textContent=original;cleanup();}};
+      const cancel=()=>{compareJumpStep.textContent=original;cleanup();};
+      const onKey=e=>{if(e.key==='Enter'){e.preventDefault();commit();}else if(e.key==='Escape'){e.preventDefault();cancel();}};
+      input.addEventListener('blur',commit,{once:true});display.addEventListener('keydown',onKey);
+    });
+  })();
+
   // --- Settings popover: layout toggle ---
   function updateLayoutUI(){
     const dual=el('optLayoutDual'),single=el('optLayoutSingle');
     if(dual)dual.classList.toggle('active',state.layoutMode==='dual');
     if(single)single.classList.toggle('active',state.layoutMode==='single');
-    if(columnsEl)columnsEl.classList.toggle('single-col',state.layoutMode==='single');
+    if(columnsEl){columnsEl.classList.toggle('compare-mode',state.compareMode);columnsEl.classList.toggle('single-col',!state.compareMode&&state.layoutMode==='single');}
   }
   // --- Settings popover: font size ---
   function updateFontSizeUI(){
@@ -1169,14 +1414,18 @@
   // Step Details Modal
   let stepDetailsEditorInstance = null;
   let stepDetailsOriginalData = null;
+  let stepDetailsTargetIndex = 0;
   const stepDetailsSaveBtn = el('stepDetailsSave');
   const stepDetailsResetBtn = el('stepDetailsReset');
   const stepDetailsStatus = el('stepDetailsStatus');
 
-  function openStepDetailsModal() {
+  function openStepDetailsModal(index=state.currentIndex,titleKey='leftStepTitle') {
     if (!state.currentFile) return;
     const {steps} = state.files.get(state.currentFile);
-    const stepObj = steps[state.currentIndex];
+    stepDetailsTargetIndex = Math.min(Math.max(0, Number(index)||0), steps.length-1);
+    const stepObj = steps[stepDetailsTargetIndex];
+    const modalTitle = el('stepDetailsModalTitle');
+    if(modalTitle)modalTitle.textContent=t('stepDetailsModalTitle')+' · '+t(titleKey).replace('{index}',stepDetailsTargetIndex+1);
 
     stepDetailsModal.classList.add('show');
     document.body.style.overflow = 'hidden';
@@ -1238,10 +1487,12 @@
     }
     stepDetailsEditor.innerHTML = '';
     stepDetailsOriginalData = null;
+    stepDetailsTargetIndex = 0;
   }
 
   // Step Details button click
-  stepDetailsBtn.addEventListener('click', openStepDetailsModal);
+  stepDetailsBtn.addEventListener('click', () => openStepDetailsModal(state.currentIndex,'leftStepTitle'));
+  compareStepDetailsBtn.addEventListener('click', () => openStepDetailsModal(state.compareIndex,'rightStepTitle'));
 
   // Save button - apply changes to current step
   stepDetailsSaveBtn.addEventListener('click', async () => {
@@ -1252,7 +1503,7 @@
       const {steps} = state.files.get(state.currentFile);
 
       // Update the step object with edited data
-      Object.assign(steps[state.currentIndex], content.json);
+      Object.assign(steps[stepDetailsTargetIndex], content.json);
 
       stepDetailsStatus.textContent = t('copied');
       stepDetailsStatus.className = 'editor-status ok';
