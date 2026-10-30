@@ -301,6 +301,9 @@
   .part-reasoning-body{flex:1 1 auto;min-width:0;}
   .part-reasoning-summary{white-space:pre-wrap;word-break:break-word;color:#c4b5e0;font-style:italic;}
   .part-reasoning-summary+.part-reasoning-summary{margin-top:.25rem;}
+  /* --- Generic fallback fields in a message --- */
+  .part-extra-body{flex:1 1 auto;min-width:0;}
+  .part-extra-body pre{max-width:100%;}
   /* --- Function call/output in content parts --- */
   .part-fn-call{border:1px solid var(--border);background:#101317;border-radius:6px;overflow:hidden;margin:.15rem 0;}
   .part-fn-header{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;padding:.35rem .55rem;background:#1c2127;border-bottom:1px solid var(--border);font-family:ui-monospace,monospace;font-size:.68rem;}
@@ -1334,24 +1337,120 @@
     return box;
   }
 
-  /* (Removed old createMessageEl version to avoid duplication) */
   // Responses-API style items appear as top-level entries of input_messages
   // (no `role`, no `content`) instead of parts nested inside a message.
   const RESPONSES_ITEM_ROLE={reasoning:'assistant',function_call:'assistant',function_call_output:'tool'};
   function isResponsesItem(msg){return !!msg&&typeof msg==='object'&&!msg.role&&!msg.sender&&Object.prototype.hasOwnProperty.call(RESPONSES_ITEM_ROLE,msg.type);}
-  function createMessageEl(msg,idx,kind,isAnswer,editedFlag=false){const div=document.createElement('div');const responsesItem=isResponsesItem(msg);const role=(msg.role||msg.sender||(responsesItem?RESPONSES_ITEM_ROLE[msg.type]:(kind==='input'?'user':'assistant')));const collapsedDefault=role==='system';div.className='message'+(collapsedDefault?' collapsed':'');const metaItems=[];if(msg.name)metaItems.push('name='+msg.name);if(msg.type)metaItems.push(msg.type);const callId=msg.tool_call_id||msg.call_id; if(callId) metaItems.push('call_id='+callId);if(Array.isArray(msg.tool_calls)&&msg.tool_calls.length)metaItems.push('tool_calls='+msg.tool_calls.length);const metaLine=metaItems.join(' • ');const header=document.createElement('div');header.className='msg-header';header.innerHTML=`<span class="arrow">▶</span><span class="msg-role">${escapeHtml(role)}</span><span>#${idx+1}</span>${metaLine?'<span>'+escapeHtml(metaLine)+'</span>':''}${editedFlag?`<span class="edited-badge">${t('edited')}</span>`:''}`;header.addEventListener('click',()=>{div.classList.toggle('collapsed');});div.appendChild(header);const body=document.createElement('div');body.className='msg-body';if(responsesItem){body.appendChild(renderTypedParts([msg]));} else if(Array.isArray(msg.content) && msg.content.some(p=>p&&typeof p==='object'&&p.type)){body.appendChild(renderTypedParts(msg.content));} else {const contentText=deriveContent(msg);body.appendChild(renderRichContent(contentText));}
-    if(Array.isArray(msg.tool_calls)&&msg.tool_calls.length){body.appendChild(renderToolCalls(msg.tool_calls));}
-  // Only render bottom image gallery when content doesn't already include images
-  if(!(Array.isArray(msg.content)&&msg.content.some(p=>p&&typeof p==='object'&&(p.type==='image'||p.type==='image_url'||p.type==='input_image')))){
-    const images=collectImages(msg);
-    if(images.length){
-      const imgWrap=document.createElement('div');imgWrap.className='mm-images';
-      images.forEach(src=>{imgWrap.appendChild(buildImageWithZoom(src));});
-      body.appendChild(imgWrap);
+
+  // Reasoning arrives under many field names depending on the producer.
+  // Render every variant that is present instead of silently dropping them.
+  const REASONING_FIELDS=[['reasoning_content','REASONING'],['reasoning','REASONING'],['reasoning_text','REASONING'],['reasoning_details','REASONING'],['thinking','THINKING'],['thinking_content','THINKING'],['thought','THOUGHT'],['analysis','ANALYSIS']];
+  // Fields covered by dedicated renderers (or by the message header); excluded
+  // from the generic fallback so they are not rendered twice.
+  const MESSAGE_META_FIELDS=new Set(['role','sender','name','type','id','index','tool_call_id','call_id','content','text','message','tool_calls','tool_call','function_call'].concat(REASONING_FIELDS.map(f=>f[0])));
+  function reasoningTextOf(value){
+    if(value==null)return'';
+    if(typeof value==='string')return value;
+    if(typeof value==='number'||typeof value==='boolean')return String(value);
+    if(Array.isArray(value))return value.map(reasoningTextOf).filter(Boolean).join('\n');
+    if(typeof value==='object'){
+      const inner=value.text??value.content??value.summary??value.thinking??value.reasoning;
+      if(inner!=null){const text=reasoningTextOf(inner);if(text)return text;}
+      try{return JSON.stringify(value,null,2);}catch(e){return String(value);}
     }
+    return String(value);
   }
-    div.appendChild(body);return div;}
-  function renderToolCalls(calls){const wrap=document.createElement('div');wrap.className='tool-calls';calls.forEach(call=>{const tc=document.createElement('div');tc.className='tool-call';const fn=call.function||{};const name=fn.name||call.name||'unknown';const id=call.id||'';const type=call.type||fn.type||'function';const header=document.createElement('div');header.className='tool-call-header';header.innerHTML=`<span class="tc-name">${escapeHtml(name)}</span>${id?`<span class="tc-id">(${escapeHtml(id)})</span>`:''}<span class="tc-type">${escapeHtml(type)}</span>`;tc.appendChild(header);let argText=fn.arguments||call.arguments||'';let parsed=null;let parseOk=false;if(typeof argText==='string'){try{parsed=JSON.parse(argText);parseOk=true;}catch{parseOk=false;}}
+  function buildReasoningBlock(label,value){
+    const text=reasoningTextOf(value);
+    if(!text||!text.trim())return null;
+    const block=document.createElement('div');block.className='part-line part-reasoning';
+    const tag=document.createElement('span');tag.className='part-tag';tag.textContent=label||'REASONING';block.appendChild(tag);
+    const rbody=document.createElement('div');rbody.className='part-reasoning-body';
+    const summary=document.createElement('div');summary.className='part-reasoning-summary';summary.textContent=text;rbody.appendChild(summary);
+    block.appendChild(rbody);return block;
+  }
+  // `tool_calls` (array) and `tool_call`/`function_call` (single object) are
+  // all used in the wild; merge whatever exists so nothing is dropped.
+  function collectMessageToolCalls(msg){
+    const calls=[];
+    const push=value=>{if(value==null)return;if(Array.isArray(value))value.forEach(push);else if(typeof value==='object')calls.push(value);};
+    push(msg.tool_calls);push(msg.tool_call);push(msg.function_call);
+    return calls;
+  }
+  // Fallback for any message field without a dedicated renderer: show it so a
+  // message never loses data just because its shape is unfamiliar.
+  function appendExtraMessageFields(body,msg,handled){
+    Object.keys(msg).forEach(key=>{
+      if(handled.has(key)||MESSAGE_META_FIELDS.has(key))return;
+      const value=msg[key];
+      if(value==null)return;
+      if(typeof value==='string'&&!value.trim())return;
+      if(Array.isArray(value)&&!value.length)return;
+      if(value&&typeof value==='object'&&!Array.isArray(value)&&!Object.keys(value).length)return;
+      const line=document.createElement('div');line.className='part-line part-extra';
+      const tag=document.createElement('span');tag.className='part-tag';tag.textContent=key.toUpperCase();line.appendChild(tag);
+      const holder=document.createElement('div');holder.className='part-extra-body';
+      if(typeof value==='string'||typeof value==='number'||typeof value==='boolean'){
+        const text=document.createElement('span');text.className='part-text';text.innerHTML=highlightXml(inlineMarkdown(String(value)));holder.appendChild(text);
+      }else{
+        const pre=document.createElement('pre');pre.textContent=JSON.stringify(value,null,2);holder.appendChild(pre);
+      }
+      line.appendChild(holder);body.appendChild(line);
+    });
+  }
+  function createMessageEl(msg,idx,kind,isAnswer,editedFlag=false){
+    const div=document.createElement('div');
+    const responsesItem=isResponsesItem(msg);
+    const role=(msg.role||msg.sender||(responsesItem?RESPONSES_ITEM_ROLE[msg.type]:(kind==='input'?'user':'assistant')));
+    const collapsedDefault=role==='system';
+    div.className='message'+(collapsedDefault?' collapsed':'');
+    const metaItems=[];
+    if(msg.name)metaItems.push('name='+msg.name);
+    if(msg.type)metaItems.push(msg.type);
+    if(msg.id)metaItems.push('id='+msg.id);
+    const callId=msg.tool_call_id||msg.call_id; if(callId) metaItems.push('call_id='+callId);
+    const toolCalls=collectMessageToolCalls(msg);
+    if(toolCalls.length)metaItems.push('tool_calls='+toolCalls.length);
+    const metaLine=metaItems.join(' • ');
+    const header=document.createElement('div');header.className='msg-header';
+    header.innerHTML=`<span class="arrow">▶</span><span class="msg-role">${escapeHtml(role)}</span><span>#${idx+1}</span>${metaLine?'<span>'+escapeHtml(metaLine)+'</span>':''}${editedFlag?`<span class="edited-badge">${t('edited')}</span>`:''}`;
+    header.addEventListener('click',()=>{div.classList.toggle('collapsed');});
+    div.appendChild(header);
+    const body=document.createElement('div');body.className='msg-body';
+    if(responsesItem){
+      body.appendChild(renderTypedParts([msg]));
+    }else{
+      const handled=new Set();
+      // Reasoning is emitted before the visible content, so show it first.
+      REASONING_FIELDS.forEach(([key,label])=>{
+        if(!Object.prototype.hasOwnProperty.call(msg,key))return;
+        handled.add(key);
+        const block=buildReasoningBlock(label,msg[key]);
+        if(block)body.appendChild(block);
+      });
+      handled.add('content');handled.add('text');handled.add('message');
+      if(Array.isArray(msg.content) && msg.content.some(p=>p&&typeof p==='object'&&p.type)){
+        body.appendChild(renderTypedParts(msg.content));
+      }else{
+        const contentText=deriveContent(msg);
+        if(contentText)body.appendChild(renderRichContent(contentText));
+      }
+      handled.add('tool_calls');handled.add('tool_call');handled.add('function_call');
+      if(toolCalls.length)body.appendChild(renderToolCalls(toolCalls));
+      appendExtraMessageFields(body,msg,handled);
+    }
+    // Only render bottom image gallery when content doesn't already include images
+    if(!(Array.isArray(msg.content)&&msg.content.some(p=>p&&typeof p==='object'&&(p.type==='image'||p.type==='image_url'||p.type==='input_image')))){
+      const images=collectImages(msg);
+      if(images.length){
+        const imgWrap=document.createElement('div');imgWrap.className='mm-images';
+        images.forEach(src=>{imgWrap.appendChild(buildImageWithZoom(src));});
+        body.appendChild(imgWrap);
+      }
+    }
+    div.appendChild(body);return div;
+  }
+  function renderToolCalls(calls){const wrap=document.createElement('div');wrap.className='tool-calls';calls.forEach(call=>{const tc=document.createElement('div');tc.className='tool-call';const fn=call.function||{};const name=fn.name||call.name||call.tool_name||'unknown';const id=call.id||call.call_id||'';const type=call.type||fn.type||'function';const header=document.createElement('div');header.className='tool-call-header';header.innerHTML=`<span class="tc-name">${escapeHtml(name)}</span>${id?`<span class="tc-id">(${escapeHtml(id)})</span>`:''}<span class="tc-type">${escapeHtml(type)}</span>`;tc.appendChild(header);let argText=fn.arguments||call.arguments||fn.parameters||call.parameters||fn.input||call.input||call.args||'';let parsed=null;let parseOk=false;if(typeof argText==='string'){try{parsed=JSON.parse(argText);parseOk=true;}catch{parseOk=false;}}
     else if(argText&&typeof argText==='object'){parsed=argText;parseOk=true;}
     // Special handling for CodeInterpreter
     if(name==='CodeInterpreter' && parsed && typeof parsed==='object' && parsed.code){const code=String(parsed.code);
@@ -1419,7 +1518,7 @@
   function parseMarkdownToTokens(text){const lines=text.replace(/\r/g,'').split('\n');const tokens=[];let inCode=false;let codeLang='';let codeAccum=[];for(let i=0;i<lines.length;i++){const line=lines[i];const fence=line.match(/^```(.*)$/);if(fence){if(!inCode){inCode=true;codeLang=fence[1].trim();codeAccum=[];}else{tokens.push({type:'code',lang:codeLang,content:codeAccum.join('\n')});inCode=false;codeLang='';codeAccum=[];}continue;}if(inCode){codeAccum.push(line);continue;}tokens.push({type:'line',content:line});}if(inCode){tokens.push({type:'code',lang:codeLang,content:codeAccum.join('\n')});}return tokens;}
   function inlineMarkdown(s){if(!s)return'';let out=escapeHtml(s);out=out.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');out=out.replace(/\*(.+?)\*/g,'<em>$1</em>');out=out.replace(/`([^`]+)`/g,'<code>$1</code>');out=out.replace(/\[(.*?)\]\((https?:[^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');out=out.replace(/(?<!["'=])\b(https?:\/\/[^\s<]+[^<.,;!?)\s])/g,'<a href="$1" target="_blank" rel="noopener">$1</a>');return out;}
   function highlightXml(html){return html.replace(/(&lt;\/?[A-Za-z0-9_:\-]+(?:\s+[^&]*?)?&gt;)/g,'<span class="xml-tag">$1</span>');}
-  function deriveContent(msg){if(typeof msg.content==='string')return msg.content;if(Array.isArray(msg.content))return msg.content.map(c=>typeof c==='string'?c:JSON.stringify(c)).join('\n');if(msg.text)return msg.text; if(msg.message)return typeof msg.message==='string'?msg.message:JSON.stringify(msg.message);return JSON.stringify(msg,null,2);}
+  function deriveContent(msg){if(typeof msg.content==='string')return msg.content;if(Array.isArray(msg.content))return msg.content.map(c=>typeof c==='string'?c:JSON.stringify(c)).join('\n');if(msg.content&&typeof msg.content==='object')return JSON.stringify(msg.content,null,2);if(msg.text)return msg.text; if(msg.message)return typeof msg.message==='string'?msg.message:JSON.stringify(msg.message);return'';}
 
   // Step Details Modal
   let stepDetailsEditorInstance = null;
